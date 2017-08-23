@@ -1,3 +1,4 @@
+#pragma once
 #include <json-c/json.h>
 typedef struct JSonGatewayResponse JSonGatewayResponse;
 struct JSonGatewayResponse{
