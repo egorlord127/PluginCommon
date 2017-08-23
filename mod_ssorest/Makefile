@@ -1,4 +1,4 @@
-DEFS=-DBIG_JOINS=1 $(SHARED_CACHING)
+DEFS=-DAPACHE=1 $(SHARED_CACHING)
 INCLUDES= \
     -I. \
     -I../include \
