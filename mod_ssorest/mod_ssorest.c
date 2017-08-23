@@ -10,20 +10,20 @@
 static SSORestPlugin ssorest;
 
 static const char *setSSORestEnable(cmd_parms *cmd, void *cfg, const char* arg);
-const char *setSSORestTrace(cmd_parms *cmd, void *cfg, const char *arg);
-const char *setSSORestUseServerNameAsDefault(cmd_parms *cmd, void *cfg, const char *arg);
-const char *setSSORestSendFormParameters(cmd_parms *cmd, void *cfg, const char *arg);
-const char *setSSORestACOName(cmd_parms *cmd, void *cfg, const char *arg);
-const char *setSSORestGatewayUrl(cmd_parms *cmd, void *cfg, const char *arg);
-const char *setSSORestLocalContent(cmd_parms *cmd, void *cfg, const char *arg);
-const char *setSSORestPluginId(cmd_parms *cmd, void *cfg, const char *arg);
-const char *setSSORestSecretKey(cmd_parms *cmd, void *cfg, const char *arg);
-const char *setSSORestSSOZone(cmd_parms *cmd, void *cfg, const char *arg);
-const char *setSSORestIgnoreExt(cmd_parms *cmd, void *cfg, const char *arg);
-const char *setSSORestIgnoreUrl(cmd_parms *cmd, void *cfg, const char *arg);
+static const char *setSSORestTrace(cmd_parms *cmd, void *cfg, const char *arg);
+static const char *setSSORestUseServerNameAsDefault(cmd_parms *cmd, void *cfg, const char *arg);
+static const char *setSSORestSendFormParameters(cmd_parms *cmd, void *cfg, const char *arg);
+static const char *setSSORestACOName(cmd_parms *cmd, void *cfg, const char *arg);
+static const char *setSSORestGatewayUrl(cmd_parms *cmd, void *cfg, const char *arg);
+static const char *setSSORestLocalContent(cmd_parms *cmd, void *cfg, const char *arg);
+static const char *setSSORestPluginId(cmd_parms *cmd, void *cfg, const char *arg);
+static const char *setSSORestSecretKey(cmd_parms *cmd, void *cfg, const char *arg);
+static const char *setSSORestSSOZone(cmd_parms *cmd, void *cfg, const char *arg);
+static const char *setSSORestIgnoreExt(cmd_parms *cmd, void *cfg, const char *arg);
+static const char *setSSORestIgnoreUrl(cmd_parms *cmd, void *cfg, const char *arg);
 static int example_handler(request_rec *r);
 static void register_hooks(apr_pool_t *pool);
-static void *createConfiguration(apr_pool_t *p, server_rec *server);
+static void *createServerConfiguration(apr_pool_t *p, server_rec *server);
 
 static const command_rec moduleDirectives[] = 
 {
@@ -47,7 +47,7 @@ module AP_MODULE_DECLARE_DATA   ssorest_module =
     STANDARD20_MODULE_STUFF,
     NULL,
     NULL,
-    createConfiguration,
+    createServerConfiguration,
     NULL,
     moduleDirectives,
     register_hooks
@@ -60,60 +60,60 @@ static const char *setSSORestEnable(cmd_parms *cmd, void *cfg, const char *arg)
         ssorest.pluginConfiguration->isEnabled = 1;
     return NULL;
 }
-const char *setSSORestTrace(cmd_parms *cmd, void *cfg, const char *arg)
+static const char *setSSORestTrace(cmd_parms *cmd, void *cfg, const char *arg)
 {
     if (!strcasecmp(arg, "on"))
         ssorest.pluginConfiguration->isTraceEnabled = 1;
     return NULL;
 }
-const char *setSSORestUseServerNameAsDefault(cmd_parms *cmd, void *cfg, const char *arg)
+static const char *setSSORestUseServerNameAsDefault(cmd_parms *cmd, void *cfg, const char *arg)
 {
     if (!strcasecmp(arg, "on"))
         ssorest.pluginConfiguration->useServerNameAsDefault = 1;
     return NULL;
 }
-const char *setSSORestSendFormParameters(cmd_parms *cmd, void *cfg, const char *arg)
+static const char *setSSORestSendFormParameters(cmd_parms *cmd, void *cfg, const char *arg)
 {
     if (!strcasecmp(arg, "on"))
         ssorest.pluginConfiguration->sendFormParameters = 1;
     return NULL;
 }
-const char *setSSORestACOName(cmd_parms *cmd, void *cfg, const char *arg)
+static const char *setSSORestACOName(cmd_parms *cmd, void *cfg, const char *arg)
 {
     ssorest.pluginConfiguration->acoName = arg;
     return NULL;
 }
-const char *setSSORestGatewayUrl(cmd_parms *cmd, void *cfg, const char *arg)
+static const char *setSSORestGatewayUrl(cmd_parms *cmd, void *cfg, const char *arg)
 {
     ssorest.pluginConfiguration->gatewayUrl = arg;
     return NULL;
 }
-const char *setSSORestLocalContent(cmd_parms *cmd, void *cfg, const char *arg)
+static const char *setSSORestLocalContent(cmd_parms *cmd, void *cfg, const char *arg)
 {
     ssorest.pluginConfiguration->localrootpath = arg;
     return NULL;
 }
-const char *setSSORestPluginId(cmd_parms *cmd, void *cfg, const char *arg)
+static const char *setSSORestPluginId(cmd_parms *cmd, void *cfg, const char *arg)
 {
     ssorest.pluginConfiguration->pluginId = arg;
     return NULL;
 }
-const char *setSSORestSecretKey(cmd_parms *cmd, void *cfg, const char *arg)
+static const char *setSSORestSecretKey(cmd_parms *cmd, void *cfg, const char *arg)
 {
     ssorest.pluginConfiguration->secretKey = arg;
     return NULL;
 }
-const char *setSSORestSSOZone(cmd_parms *cmd, void *cfg, const char *arg)
+static const char *setSSORestSSOZone(cmd_parms *cmd, void *cfg, const char *arg)
 {
     ssorest.pluginConfiguration->ssoZone = arg;
     return NULL;
 }
-const char *setSSORestIgnoreExt(cmd_parms *cmd, void *cfg, const char *arg)
+static const char *setSSORestIgnoreExt(cmd_parms *cmd, void *cfg, const char *arg)
 {
     ssorest.pluginConfiguration->ignoreExt = arg;
     return NULL;
 }
-const char *setSSORestIgnoreUrl(cmd_parms *cmd, void *cfg, const char *arg)
+static const char *setSSORestIgnoreUrl(cmd_parms *cmd, void *cfg, const char *arg)
 {
     ssorest.pluginConfiguration->ignoreUrl = arg;
     return NULL;
@@ -143,9 +143,10 @@ static void register_hooks(apr_pool_t *pool)
     ap_hook_handler(example_handler, NULL, NULL, APR_HOOK_LAST);
 }
 
-static void *createConfiguration(apr_pool_t *p, server_rec *server)
+static void *createServerConfiguration(apr_pool_t *p, server_rec *server)
 {
-    ssorest.createPluginConfiguration = createPluginConfiguration;
+    
+    ssorest.createPluginConfiguration = createPluginConfiguration;    
     ssorest.createPluginConfiguration(&ssorest, p);
     return ssorest.pluginConfiguration;
 }
