@@ -145,9 +145,7 @@ static void register_hooks(apr_pool_t *pool)
 
 static void *createServerConfiguration(apr_pool_t *p, server_rec *server)
 {
-    
-    ssorest.createPluginConfiguration = createPluginConfiguration;    
-    ssorest.createPluginConfiguration(&ssorest, p);
+    createPluginConfiguration(&ssorest, p);
     return ssorest.pluginConfiguration;
 }
 

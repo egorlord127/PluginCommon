@@ -4,11 +4,13 @@ INCLUDES= \
     -I../include \
 
 
-LIBS=
+LIBS=-ljson-c
 
 SOURCES= \
     mod_ssorest.c \
     ../src/SSORestPlugin.c \
+	../src/JsonGatewayRequest.c \
+	../src/JsonGatewayResponse.c \
 
 main:
 	apxs $(INCLUDES) $(DEFS) -c $(SOURCES) $(LIBS)
