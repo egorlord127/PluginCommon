@@ -1,13 +1,8 @@
 #pragma once
 
 #include <json-c/json.h>
+#include "Global.h"
 
-typedef struct JSonGatewayRequest JSonGatewayRequest;
-struct JSonGatewayRequest{
-    json_object *json;
-    void (*setAttributes)(JSonGatewayRequest*, const char*, const char*);
-    void (*buildJsonRequest)(JSonGatewayRequest*);
-};
-
-void buildJsonRequest(JSonGatewayRequest* self);
-void setAttributes(JSonGatewayRequest* self, const char* key, const char* value);
+JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject*);
+void sendJsonGatewayRequest(const char*);
+void setJsonGatewayRequestAttributes(JSonGatewayRequest* , const char*, const char*);

@@ -1,6 +1,6 @@
 #include "JsonGatewayResponse.h"
 
-void parseJson(const char* jsonString, JSonGatewayResponse* self)
+void parseJsonGatewayResponse(const char* jsonString, JSonGatewayResponse* self)
 {
 
 }

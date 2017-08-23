@@ -119,28 +119,17 @@ static const char *setSSORestIgnoreUrl(cmd_parms *cmd, void *cfg, const char *ar
     return NULL;
 }
 
-static int example_handler(request_rec *r)
+static int process(request_rec *r)
 {
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "%d", ssorest.pluginConfiguration->isEnabled);
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "%d", ssorest.pluginConfiguration->isTraceEnabled);
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "%d", ssorest.pluginConfiguration->useServerNameAsDefault);
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "%d", ssorest.pluginConfiguration->sendFormParameters);
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "%s", ssorest.pluginConfiguration->acoName);
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "%s", ssorest.pluginConfiguration->gatewayUrl);
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "%s", ssorest.pluginConfiguration->localrootpath);
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "%s", ssorest.pluginConfiguration->pluginId);
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "%s", ssorest.pluginConfiguration->secretKey);
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "%s", ssorest.pluginConfiguration->gatewayToken);
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "%s", ssorest.pluginConfiguration->ssoZone);
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "%s", ssorest.pluginConfiguration->ignoreExt);
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, "%s", ssorest.pluginConfiguration->ignoreUrl);
-
+    char *temp = processRequest(r, &ssorest);
+    ap_log_error(APLOG_MARK, APLOG_CRIT, 0, r->server, APLOGNO(10006)
+                "testcode:%s", temp);
     return OK;
 }
 
 static void register_hooks(apr_pool_t *pool) 
 {
-    ap_hook_handler(example_handler, NULL, NULL, APR_HOOK_LAST);
+    ap_hook_check_access(process, NULL, NULL, APR_HOOK_LAST, AP_AUTH_INTERNAL_PER_URI);
 }
 
 static void *createServerConfiguration(apr_pool_t *p, server_rec *server)
@@ -148,4 +137,3 @@ static void *createServerConfiguration(apr_pool_t *p, server_rec *server)
     createPluginConfiguration(&ssorest, p);
     return ssorest.pluginConfiguration;
 }
-

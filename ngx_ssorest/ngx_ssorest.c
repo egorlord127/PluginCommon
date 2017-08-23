@@ -2,6 +2,9 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 
+#include "SSORestPlugin.h"
+static SSORestPlugin ssorest;
+
 static void *createServerConfiguration(ngx_conf_t *cf);
 static const char *setSSORestEnable(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 static const char *setSSORestTrace(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
@@ -151,7 +154,7 @@ ngx_module_t ngx_ssorest_plugin_module =
         NGX_MODULE_V1,
                 &ngx_ssorest_plugin_module_ctx, /* module context */
                 moduleDirectives, /* module directives */
-                NGX_HTTP_MODULE, /* module type */
+                NGX_HTTP_MODULE, /* module teltsype */
                 NULL, /* init master */
                 NULL, /* init module */
                 NULL, /* init process */
@@ -169,15 +172,27 @@ static void *createServerConfiguration(ngx_conf_t *cf)
     return ssorest.pluginConfiguration;
 }
 
-static const char *setSSORestEnable(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-static const char *setSSORestTrace(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-static const char *setSSORestUseServerNameAsDefault(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-static const char *setSSORestSendFormParameters(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-static const char *setSSORestACOName(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-static const char *setSSORestGatewayUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-static const char *setSSORestLocalContent(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-static const char *setSSORestPluginId(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-static const char *setSSORestSecretKey(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-static const char *setSSORestSSOZone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-static const char *setSSORestIgnoreExt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-static const char *setSSORestIgnoreUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+static const char *setSSORestEnable(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
+{
+    ngx_str_t *value = cf->args->elts;
+    if (!strcasecmp(value[1].data, "on"))
+        ssorest.pluginConfiguration->isEnabled = 1;
+    return NGX_CONF_OK;
+}
+static const char *setSSORestTrace(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
+{
+    ngx_str_t *value = cf->args->elts;
+    if (!strcasecmp(value[1].data, "on"))
+        ssorest.pluginConfiguration->isTraceEnabled = 1;
+    return NGX_CONF_OK;
+}
+// static const char *setSSORestUseServerNameAsDefault(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+// static const char *setSSORestSendFormParameters(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+// static const char *setSSORestACOName(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+// static const char *setSSORestGatewayUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+// static const char *setSSORestLocalContent(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+// static const char *setSSORestPluginId(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+// static const char *setSSORestSecretKey(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+// static const char *setSSORestSSOZone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+// static const char *setSSORestIgnoreExt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+// static const char *setSSORestIgnoreUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);

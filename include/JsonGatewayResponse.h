@@ -1,5 +1,6 @@
 #pragma once
 #include <json-c/json.h>
+#include "Global.h"
 typedef struct JSonGatewayResponse JSonGatewayResponse;
 struct JSonGatewayResponse{
     json_object *json;
@@ -7,7 +8,7 @@ struct JSonGatewayResponse{
     json_object *jsonResponse;
     json_object *jsonResponseHeader;
     json_object *jsonResponseCookies;
-    void (*parseJson)(const char*, JSonGatewayResponse*);
+    int status;
 };
 
-void parseJson(const char*, JSonGatewayResponse*);
+void parseJsonGatewayResponse(const char*, JSonGatewayResponse*);
