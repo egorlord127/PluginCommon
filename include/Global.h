@@ -4,6 +4,9 @@
 #include <json-c/json.h>
 #ifdef APACHE
     #include <httpd.h>
+    #include <http_request.h>
+    #include <http_core.h>
+    #include <httpd.h>
     typedef request_rec SSORestRequestObject;
     typedef apr_pool_t SSORestPluginPool;
     #define ssorest_pcalloc(pool, size) (apr_pcalloc(pool, size))
