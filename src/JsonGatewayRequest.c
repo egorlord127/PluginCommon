@@ -57,32 +57,57 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject* request)
     // servletPath
     json_object_object_add(jsonGatewayRequest, "servletPath", json_object_new_string(""));
 
-    // // locales
-    // json_object_object_add(jsonGatewayRequest, "locales", json_object_new_string(""));
+    // locales
+    json_object* jsonarray_locale = json_object_new_array();
+    ssorest_array_t* locales = getLocales(request);
+    int i;
+    for (i = 0; i < locales->nelts; i++)
+    {
+        #ifdef APACHE
+        const char *s = ((const char**)locales->elts)[i];
+        json_object_array_add(jsonarray_locale, json_object_new_string((char*) s));
+        #elif NGINX
 
-    // // headers
-    // json_object* jsonGatewayRequestHeaders = json_object_new_object();
+        #endif
+        
+    }
+    json_object_object_add(jsonGatewayRequest, "locales", jsonarray_locale);
+
+    // headers
+    json_object* jsonGatewayRequestHeaders = json_object_new_object();
     
-    // // headers: accept-language
-    // json_object_object_add(jsonGatewayRequestHeaders, "accept-language", json_object_new_string(""));
+    // headers: accept-language
+    json_object* jsonHeaderAcceptLanguage = json_object_new_array();
+    json_object_array_add(jsonHeaderAcceptLanguage, json_object_new_string(getAcceptLanguage(request)));
+    json_object_object_add(jsonGatewayRequestHeaders, "accept-language", jsonHeaderAcceptLanguage);
 
-    // // headers: connection
-    // json_object_object_add(jsonGatewayRequestHeaders, "connection", json_object_new_string(""));
+    // headers: connection
+    json_object* jsonHeaderConnection = json_object_new_array();
+    json_object_array_add(jsonHeaderConnection, json_object_new_string(getConnection(request)));
+    json_object_object_add(jsonGatewayRequestHeaders, "connection", jsonHeaderConnection);
 
-    // // headers: accept
-    // json_object_object_add(jsonGatewayRequestHeaders, "accept", json_object_new_string(""));
+    // headers: accept
+    json_object* jsonHeaderAccept = json_object_new_array();
+    json_object_array_add(jsonHeaderAccept, json_object_new_string(getAccept(request)));
+    json_object_object_add(jsonGatewayRequestHeaders, "accept", jsonHeaderAccept);
 
-    // // headers: host
-    // json_object_object_add(jsonGatewayRequestHeaders, "host", json_object_new_string(""));
+    // headers: host
+    json_object* jsonHeaderHost = json_object_new_array();
+    json_object_array_add(jsonHeaderHost, json_object_new_string(getHost(request)));
+    json_object_object_add(jsonGatewayRequestHeaders, "host", jsonHeaderHost);
 
-    // // headers: accept-encoding
-    // json_object_object_add(jsonGatewayRequestHeaders, "accept-encoding", json_object_new_string(""));
+    // headers: accept-encoding
+    json_object* jsonHeaderAcceptEncoding = json_object_new_array();
+    json_object_array_add(jsonHeaderAcceptEncoding, json_object_new_string(getAcceptEncoding(request)));
+    json_object_object_add(jsonGatewayRequestHeaders, "accept-encoding", jsonHeaderAcceptEncoding);
 
-    // // headers: user-agent
-    // json_object_object_add(jsonGatewayRequestHeaders, "user-agent", json_object_new_string(""));
+    // headers: user-agent
+    json_object* jsonHeaderUserAgent = json_object_new_array();
+    json_object_array_add(jsonHeaderUserAgent, json_object_new_string(getUserAgent(request)));
+    json_object_object_add(jsonGatewayRequestHeaders, "user-agent", jsonHeaderUserAgent);
 
-    // // headers
-    // json_object_object_add(jsonGatewayRequest, "headers", jsonGatewayRequestHeaders);
+    // headers
+    json_object_object_add(jsonGatewayRequest, "headers", jsonGatewayRequestHeaders);
 
     // // cookies
     
@@ -312,31 +337,112 @@ int getServerPort(SSORestRequestObject* r)
 
     return rv;
 }
-// const char* getLocales(SSORestRequestObject* r)
-// {
+ssorest_array_t* getLocales(SSORestRequestObject* r)
+{
+    const char *start;
+    const char *end;
+    const char *pos;
+    ssorest_array_t *langs_array = NULL;
+    #ifdef APACHE
+        start = apr_table_get(r->headers_in, "Accept-Language");
+        end = start + strlen(start);
+        langs_array = apr_array_make(r->pool, 1, sizeof(const char*));
+    #elif NGINX
+        start = r->headers_in.accept_language? r->headers_in.accept_language->value.data : NULL;
+        end = start? (start + r->headers_in.accept_language->value.len) : (NULL);
+        langs_array = ngx_array_create(r->pool, 1, sizeof(ngx_str_t));
+    #endif
     
-// }
-// const char* getAcceptLanguage(SSORestRequestObject* r)
-// {
-    
-// }
-// const char* getConnection(SSORestRequestObject* r)
-// {
-    
-// }
-// const char* getAccept(SSORestRequestObject* r)
-// {
-    
-// }
-// const char* getHost(SSORestRequestObject* r)
-// {
-    
-// }
-// const char* getAcceptEncoding(SSORestRequestObject* r)
-// {
-    
-// }
-// const char* getUserAgent(SSORestRequestObject* r)
-// {
-    
-// }
+    while (start < end) {
+        while (start < end && *start == ' ') {
+            start++;
+        }
+        pos = start;
+        while (pos < end && *pos != ',' && *pos != ';') {
+            pos++;
+        }
+        char *lang = ssorest_pcalloc(r->pool, (pos-start) + 1);
+        memcpy(lang, start, pos-start);
+        lang[pos-start] = '\0';
+        #ifdef APACHE
+            *((const char **) apr_array_push(langs_array)) = lang;
+        #elif NGINX
+            ngx_str_t* ele = ngx_array_push(langs_array);
+            ele->len = pos-start;
+            ele->data = lang;
+        #endif
+
+        // We discard the quality value
+        if (*pos == ';') {
+            while (pos < end && *pos != ',') {
+                pos++;
+            }
+        }
+        if (*pos == ',') {
+            pos++;
+        }
+
+        start = pos;
+    }
+    return langs_array;
+}
+const char* getAcceptLanguage(SSORestRequestObject* r)
+{
+    const char *rv;
+    #ifdef APACHE
+        rv = apr_table_get(r->headers_in, "Accept-Language");
+    #elif NGINX
+
+    #endif
+    return rv;
+}
+const char* getConnection(SSORestRequestObject* r)
+{
+    const char *rv;
+    #ifdef APACHE
+        rv = apr_table_get(r->headers_in, "Connection");
+    #elif NGINX
+
+    #endif
+    return rv;
+}
+const char* getAccept(SSORestRequestObject* r)
+{
+    const char *rv;
+    #ifdef APACHE
+        rv = apr_table_get(r->headers_in, "Accept");
+    #elif NGINX
+
+    #endif
+    return rv;
+}
+const char* getHost(SSORestRequestObject* r)
+{
+    const char *rv;
+    #ifdef APACHE
+        rv = apr_table_get(r->headers_in, "Host");
+    #elif NGINX
+
+    #endif
+    return rv;
+}
+const char* getAcceptEncoding(SSORestRequestObject* r)
+{
+    const char *rv;
+    #ifdef APACHE
+        rv = apr_table_get(r->headers_in, "Accept-Encoding");
+    #elif NGINX
+
+    #endif
+    return rv;
+}
+const char* getUserAgent(SSORestRequestObject* r)
+{
+    const char *rv;
+    #ifdef APACHE
+        rv = apr_table_get(r->headers_in, "User-Agent");
+    #elif NGINX
+
+    #endif
+    return rv;
+}
