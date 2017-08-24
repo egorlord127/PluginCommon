@@ -21,7 +21,6 @@ static const char *setSSORestSecretKey(cmd_parms *cmd, void *cfg, const char *ar
 static const char *setSSORestSSOZone(cmd_parms *cmd, void *cfg, const char *arg);
 static const char *setSSORestIgnoreExt(cmd_parms *cmd, void *cfg, const char *arg);
 static const char *setSSORestIgnoreUrl(cmd_parms *cmd, void *cfg, const char *arg);
-static int example_handler(request_rec *r);
 static void register_hooks(apr_pool_t *pool);
 static void *createServerConfiguration(apr_pool_t *p, server_rec *server);
 

@@ -43,52 +43,52 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject* request)
     json_object_object_add(jsonGatewayRequest, "remotePort", json_object_new_int(getRemotePort(request)));
 
     // secure
-    json_object_object_add(jsonGatewayRequest, "secure", json_object_new_string(""));
+    json_object_object_add(jsonGatewayRequest, "secure", json_object_new_boolean(getSecure(request)));
 
     // scheme
-    json_object_object_add(jsonGatewayRequest, "scheme", json_object_new_string(""));
+    json_object_object_add(jsonGatewayRequest, "scheme", json_object_new_string(getScheme(request)));
 
     // serverName
-    json_object_object_add(jsonGatewayRequest, "serverName", json_object_new_string(""));
+    json_object_object_add(jsonGatewayRequest, "serverName", json_object_new_string(getServerName(request)));
 
     // serverPort
-    json_object_object_add(jsonGatewayRequest, "serverPort", json_object_new_int(0));
+    json_object_object_add(jsonGatewayRequest, "serverPort", json_object_new_int(getServerPort(request)));
 
     // servletPath
     json_object_object_add(jsonGatewayRequest, "servletPath", json_object_new_string(""));
 
-    // locales
-    json_object_object_add(jsonGatewayRequest, "locales", json_object_new_string(""));
+    // // locales
+    // json_object_object_add(jsonGatewayRequest, "locales", json_object_new_string(""));
 
-    // headers
-    json_object* jsonGatewayRequestHeaders = json_object_new_object();
+    // // headers
+    // json_object* jsonGatewayRequestHeaders = json_object_new_object();
     
-    // headers: accept-language
-    json_object_object_add(jsonGatewayRequestHeaders, "accept-language", json_object_new_string(""));
+    // // headers: accept-language
+    // json_object_object_add(jsonGatewayRequestHeaders, "accept-language", json_object_new_string(""));
 
-    // headers: connection
-    json_object_object_add(jsonGatewayRequestHeaders, "connection", json_object_new_string(""));
+    // // headers: connection
+    // json_object_object_add(jsonGatewayRequestHeaders, "connection", json_object_new_string(""));
 
-    // headers: accept
-    json_object_object_add(jsonGatewayRequestHeaders, "accept", json_object_new_string(""));
+    // // headers: accept
+    // json_object_object_add(jsonGatewayRequestHeaders, "accept", json_object_new_string(""));
 
-    // headers: host
-    json_object_object_add(jsonGatewayRequestHeaders, "host", json_object_new_string(""));
+    // // headers: host
+    // json_object_object_add(jsonGatewayRequestHeaders, "host", json_object_new_string(""));
 
-    // headers: accept-encoding
-    json_object_object_add(jsonGatewayRequestHeaders, "accept-encoding", json_object_new_string(""));
+    // // headers: accept-encoding
+    // json_object_object_add(jsonGatewayRequestHeaders, "accept-encoding", json_object_new_string(""));
 
-    // headers: user-agent
-    json_object_object_add(jsonGatewayRequestHeaders, "user-agent", json_object_new_string(""));
+    // // headers: user-agent
+    // json_object_object_add(jsonGatewayRequestHeaders, "user-agent", json_object_new_string(""));
 
-    // headers
-    json_object_object_add(jsonGatewayRequest, "headers", jsonGatewayRequestHeaders);
+    // // headers
+    // json_object_object_add(jsonGatewayRequest, "headers", jsonGatewayRequestHeaders);
 
-    // cookies
+    // // cookies
     
-    // parameters
+    // // parameters
 
-    // attributes
+    // // attributes
     return jsonGatewayRequest;
 }
 
@@ -104,76 +104,214 @@ void sendJsonGatewayRequest(const char* gatewayUrl)
 
 const char* getMethod(SSORestRequestObject* r)
 {
-    return r->method;
+    const char* rv; 
+    #ifdef APACHE
+    rv = r->method? r->method : "";
+    #elif NGINX
+
+    #endif
+
+    return rv;
 }
 const char* getUrl(SSORestRequestObject* r)
 {
-    return r->uri;
+    const char* rv; 
+    #ifdef APACHE
+    rv = r->uri? r->uri : "";
+    #elif NGINX
+
+    #endif
+
+    return rv;
+}
+const char* getUri(SSORestRequestObject* r)
+{
+    const char* rv; 
+    #ifdef APACHE
+    rv = r->uri? r->uri : "";
+    #elif NGINX
+
+    #endif
+
+    return rv;
 }
 const char* getProtocol(SSORestRequestObject* r)
 {
-    return r->protocol;
+    const char* rv; 
+    #ifdef APACHE
+    if (r->main)
+        rv = r->main->protocol;
+    else
+        rv = r->protocol;
+    #elif NGINX
+
+    #endif
+
+    return rv;
 }
 const char* getCharacterEncoding(SSORestRequestObject* r)
 {
-    return r->content_encoding;
+    const char* rv; 
+    #ifdef APACHE
+    rv = r->content_encoding? r->content_encoding : "";
+    #elif NGINX
+
+    #endif
+
+    return rv;
 }
 int getContentLength(SSORestRequestObject* r)
 {
-    return r->clength;
+    int rv; 
+    #ifdef APACHE
+    rv = r->clength? r->clength : 0;
+    #elif NGINX
+
+    #endif
+
+    return rv;
 }
 const char* getContentType(SSORestRequestObject* r)
 {
-    return r->content_type;
+    const char* rv; 
+    #ifdef APACHE
+    rv = r->content_type? r->content_type : "";
+    #elif NGINX
+
+    #endif
+
+    return rv;
 }
 const char* getContextPath(SSORestRequestObject* r)
 {
-    return ap_document_root(r);
+    const char* rv; 
+    #ifdef APACHE
+    rv = ap_document_root(r);
+    #elif NGINX
+
+    #endif
+
+    return rv;
 }
 const char* getLocalAddr(SSORestRequestObject* r)
 {
-    return r->connection->local_ip;
+    const char* rv; 
+    #ifdef APACHE
+    rv = r->connection->local_ip? r->connection->local_ip : "";
+    #elif NGINX
+
+    #endif
+
+    return rv;
 }
 const char* getLocalName(SSORestRequestObject* r)
 {
-    return r->server->server_hostname;
+    const char* rv; 
+    #ifdef APACHE
+    rv = r->server->server_hostname? r->server->server_hostname : "";
+    #elif NGINX
+
+    #endif
+
+    return rv;
 }
 int getLocalPort(SSORestRequestObject* r)
 {
-    return 80;
+    int rv = 0;
+    #ifdef APACHE
+    rv = r->server->port;
+    if (rv == 0)
+    {
+        if (r->server->addrs)
+            rv = r->server->addrs->host_port;
+    }
+    #elif NGINX
+
+    #endif
+
+    return rv;
 }
 const char* getRemoteAddr(SSORestRequestObject* r)
 {
-    return r->useragent_ip;
+    const char* rv; 
+    #ifdef APACHE
+    rv = r->useragent_ip? r->useragent_ip : "";
+    #elif NGINX
+
+    #endif
+
+    return rv;
 }
 const char* getRemoteHost(SSORestRequestObject* r)
 {
-    return r->useragent_ip;
+    const char* rv; 
+    #ifdef APACHE
+    rv = r->useragent_ip? r->useragent_ip : "";
+    #elif NGINX
+
+    #endif
+
+    return rv;
 }
 int getRemotePort(SSORestRequestObject* r)
 {
-    return r->useragent_addr->port;
+    int rv = 0;
+    #ifdef APACHE
+    rv = r->useragent_addr->port? r->useragent_addr->port : 0;
+    #elif NGINX
+
+    #endif
+
+    return rv;
 }
-// const char* getSecure(SSORestRequestObject* r)
-// {
-    
-// }
-// const char* getScheme(SSORestRequestObject* r)
-// {
-    
-// }
-// const char* getServerName(SSORestRequestObject* r)
-// {
-    
-// }
-// const char* getServerPort(SSORestRequestObject* r)
-// {
-    
-// }
-// const char* getServletPath(SSORestRequestObject* r)
-// {
-    
-// }
+int getSecure(SSORestRequestObject* r)
+{
+    int rv = 0;
+    const char* scheme = getScheme(r);
+    if(!strcasecmp(scheme, "https"))
+        rv = 1;
+    return rv;
+}
+const char* getScheme(SSORestRequestObject* r)
+{
+    int port = getServerPort(r);
+    switch (port)
+    {
+        case 80: 
+            return "http";
+        case 443: 
+            return "https";
+        default: 
+            return "";
+    }
+}
+const char* getServerName(SSORestRequestObject* r)
+{
+    const char* rv;
+    #ifdef APACHE
+    rv = r->server->server_hostname? r->server->server_hostname : "";
+    #elif NGINX
+
+    #endif
+
+    return rv;
+}
+int getServerPort(SSORestRequestObject* r)
+{
+    int rv = 0;
+    #ifdef APACHE
+    rv = r->server->port;
+    if (rv == 0)
+    {
+        if (r->server->addrs)
+            rv = r->server->addrs->host_port;
+    }
+    #elif NGINX
+
+    #endif
+
+    return rv;
+}
 // const char* getLocales(SSORestRequestObject* r)
 // {
     
