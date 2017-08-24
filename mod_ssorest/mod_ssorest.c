@@ -6,7 +6,7 @@
 #include <http_config.h>
 
 #include "SSORestPlugin.h"
-
+#include <apr_tables.h>
 static SSORestPlugin ssorest;
 
 static const char *setSSORestEnable(cmd_parms *cmd, void *cfg, const char* arg);
@@ -123,6 +123,7 @@ static int process(request_rec *r)
     char *temp = processRequest(r, &ssorest);
     ap_log_error(APLOG_MARK, APLOG_CRIT, 0, r->server, APLOGNO(10006)
                 "testcode:%s", temp);
+
     return OK;
 }
 
