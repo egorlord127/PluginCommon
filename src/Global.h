@@ -34,13 +34,13 @@
     #define ssorest_pcalloc(pool, size) (ngx_pcalloc(pool, size))
     #define ssorest_palloc(pool, size) (ngx_palloc(pool, size))
     #define logEmerg(r,  ...) 	ngx_log_error_core(NGX_LOG_EMERG,   r->connection->log, 0, __VA_ARGS__)
-    #define logAlert(r,  ...) 	ngx_log_error_core(NGX_LOG_ALERT,   r->connection->log, 0 __VA_ARGS__)
-    #define logCrit(r,   ...) 	ngx_log_error_core(NGX_LOG_CRIT,    r->connection->log, 0 __VA_ARGS__)
-    #define logError(r,  ...) 	ngx_log_error_core(NGX_LOG_ERR,     r->connection->log, 0 __VA_ARGS__)
-    #define logWarn(r,   ...) 	ngx_log_error_core(NGX_LOG_WARNING, r->connection->log, 0 __VA_ARGS__)
-    #define logNotice(r, ...) 	ngx_log_error_core(NGX_LOG_NOTICE,  r->connection->log, 0 __VA_ARGS__)
-    #define logInfo(r,   ...) 	ngx_log_error_core(NGX_LOG_INFO,    r->connection->log, 0 __VA_ARGS__)
-    #define logDebug(r,  ...) 	ngx_log_error_core(NGX_LOG_DEBUG,   r->connection->log, 0 __VA_ARGS__)
+    #define logAlert(r,  ...) 	ngx_log_error_core(NGX_LOG_ALERT,   r->connection->log, 0, __VA_ARGS__)
+    #define logCrit(r,   ...) 	ngx_log_error_core(NGX_LOG_CRIT,    r->connection->log, 0, __VA_ARGS__)
+    #define logError(r,  ...) 	ngx_log_error_core(NGX_LOG_ERR,     r->connection->log, 0, __VA_ARGS__)
+    #define logWarn(r,   ...) 	ngx_log_error_core(NGX_LOG_WARNING, r->connection->log, 0, __VA_ARGS__)
+    #define logNotice(r, ...) 	ngx_log_error_core(NGX_LOG_NOTICE,  r->connection->log, 0, __VA_ARGS__)
+    #define logInfo(r,   ...) 	ngx_log_error_core(NGX_LOG_INFO,    r->connection->log, 0, __VA_ARGS__)
+    #define logDebug(r,  ...) 	ngx_log_error_core(NGX_LOG_DEBUG,   r->connection->log, 0, __VA_ARGS__)
 #endif
 
 
