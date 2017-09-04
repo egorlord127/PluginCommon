@@ -134,7 +134,7 @@ const char* getMethod(SSORestRequestObject* r)
     #ifdef APACHE
         rv = r->method? r->method : "";
     #elif NGINX
-        rv = r->main->method_name.data? makeNullTerminated(r->pool, r->main->method_name.data, r->main->method_name.len) : "";
+        rv = r->main->method_name.data? toStringSafety(r->pool, r->main->method_name.data, r->main->method_name.len) : "";
     #endif
 
     return rv;
@@ -165,7 +165,7 @@ const char* getProtocol(SSORestRequestObject* r)
     #ifdef APACHE
         rv = r->main? r->main->protocol : r->protocol;
     #elif NGINX
-        rv = r->main->http_protocol.data?  makeNullTerminated(r->pool, r->main->http_protocol.data, r->main->http_protocol.len) : "";
+        rv = r->main->http_protocol.data?  toStringSafety(r->pool, r->main->http_protocol.data, r->main->http_protocol.len) : "";
     #endif
 
     return rv;
@@ -176,7 +176,7 @@ const char* getCharacterEncoding(SSORestRequestObject* r)
     #ifdef APACHE
         rv = r->content_encoding? r->content_encoding : "";
     #elif NGINX
-        rv = r->headers_out.content_encoding? makeNullTerminated(r->pool, r->headers_out.content_encoding->value.data, r->headers_out.content_encoding->value.len) : "";
+        rv = r->headers_out.content_encoding? toStringSafety(r->pool, r->headers_out.content_encoding->value.data, r->headers_out.content_encoding->value.len) : "";
     #endif
 
     return rv;
@@ -199,7 +199,7 @@ const char* getContentType(SSORestRequestObject* r)
         rv = r->content_type? r->content_type : "";
     #elif NGINX
         ngx_table_elt_t *h = *(ngx_table_elt_t **) ((char *) r + offsetof(ngx_http_request_t, headers_in.content_type));
-        rv = h? makeNullTerminated(r->pool, h->value.data, h->value.len) : "";
+        rv = h? toStringSafety(r->pool, h->value.data, h->value.len) : "";
     #endif
 
     return rv;
@@ -216,7 +216,7 @@ const char* getContextPath(SSORestRequestObject* r)
         clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
         if (clcf->root_lengths == NULL) {
-            rv = makeNullTerminated(r->pool, clcf->root.data, clcf->root.len);
+            rv = toStringSafety(r->pool, clcf->root.data, clcf->root.len);
         }
         else {
             if (ngx_http_script_run(r, &path, clcf->root_lengths->elts, 0,
@@ -231,7 +231,7 @@ const char* getContextPath(SSORestRequestObject* r)
             {
                 // TODO: Error Handling
             }
-            rv = makeNullTerminated(r->pool, path.data, path.len);
+            rv = toStringSafety(r->pool, path.data, path.len);
         }
 
     #endif
@@ -260,7 +260,7 @@ const char* getLocalAddr(SSORestRequestObject* r)
         }
 
         ngx_memcpy(s.data, addr, s.len);
-        rv = makeNullTerminated(r->pool, s.data, s.len);
+        rv = toStringSafety(r->pool, s.data, s.len);
     #endif
 
     return rv;
@@ -273,7 +273,7 @@ const char* getLocalName(SSORestRequestObject* r)
     #elif NGINX
         ngx_http_core_srv_conf_t *cscf;
         cscf = ngx_http_get_module_srv_conf(r, ngx_http_core_module);
-        rv = makeNullTerminated(r->pool, cscf->server_name.data, cscf->server_name.len);
+        rv = toStringSafety(r->pool, cscf->server_name.data, cscf->server_name.len);
     #endif
 
     return rv;
@@ -300,7 +300,7 @@ const char* getRemoteAddr(SSORestRequestObject* r)
     #ifdef APACHE
         rv = r->useragent_ip? r->useragent_ip : "";
     #elif NGINX
-        rv = makeNullTerminated(r->pool, r->connection->addr_text.data, r->connection->addr_text.len);
+        rv = toStringSafety(r->pool, r->connection->addr_text.data, r->connection->addr_text.len);
     #endif
 
     return rv;
@@ -311,7 +311,7 @@ const char* getRemoteHost(SSORestRequestObject* r)
     #ifdef APACHE
         rv = r->useragent_ip? r->useragent_ip : "";
     #elif NGINX
-        rv = makeNullTerminated(r->pool, r->connection->addr_text.data, r->connection->addr_text.len);
+        rv = toStringSafety(r->pool, r->connection->addr_text.data, r->connection->addr_text.len);
     #endif
 
     return rv;
@@ -357,7 +357,7 @@ const char* getServerName(SSORestRequestObject* r)
     #elif NGINX
         ngx_http_core_srv_conf_t *cscf;
         cscf = ngx_http_get_module_srv_conf(r, ngx_http_core_module);
-        rv = makeNullTerminated(r->pool, cscf->server_name.data, cscf->server_name.len);
+        rv = toStringSafety(r->pool, cscf->server_name.data, cscf->server_name.len);
     #endif
 
     return rv;
@@ -435,7 +435,7 @@ const char* getAcceptLanguage(SSORestRequestObject* r)
     #elif NGINX
         #if (NGX_HTTP_HEADERS)
             ngx_table_elt_t *h = *(ngx_table_elt_t **) ((char *) r + offsetof(ngx_http_request_t, headers_in.accept_language));
-            rv = h? makeNullTerminated(r->pool, h->value.data, h->value.len) : "";
+            rv = h? toStringSafety(r->pool, h->value.data, h->value.len) : "";
         #endif
     #endif
 
@@ -468,7 +468,7 @@ const char* getAccept(SSORestRequestObject* r)
     #elif NGINX
         #if (NGX_HTTP_HEADERS)
             ngx_table_elt_t *h = *(ngx_table_elt_t **) ((char *) r + offsetof(ngx_http_request_t, headers_in.accept));
-            rv = h? makeNullTerminated(r->pool, h->value.data, h->value.len) : "";
+            rv = h? toStringSafety(r->pool, h->value.data, h->value.len) : "";
         #endif
     #endif
 
@@ -481,9 +481,9 @@ const char* getHost(SSORestRequestObject* r)
         rv = apr_table_get(r->headers_in, "Host");
     #elif NGINX
         ngx_table_elt_t *h = *(ngx_table_elt_t **) ((char *) r + offsetof(ngx_http_request_t, headers_in.host));
-        rv = h? makeNullTerminated(r->pool, h->value.data, h->value.len) : "";
+        rv = h? toStringSafety(r->pool, h->value.data, h->value.len) : "";
     #endif
-    
+
     return rv;
 }
 const char* getAcceptEncoding(SSORestRequestObject* r)
@@ -493,7 +493,7 @@ const char* getAcceptEncoding(SSORestRequestObject* r)
         rv = apr_table_get(r->headers_in, "Accept-Encoding");
     #elif NGINX
         ngx_table_elt_t *h = *(ngx_table_elt_t **) ((char *) r + offsetof(ngx_http_request_t, headers_in.accept_encoding));
-        rv = h? makeNullTerminated(r->pool, h->value.data, h->value.len) : "";
+        rv = h? toStringSafety(r->pool, h->value.data, h->value.len) : "";
     #endif
 
     return rv;
@@ -505,7 +505,7 @@ const char* getUserAgent(SSORestRequestObject* r)
         rv = apr_table_get(r->headers_in, "User-Agent");
     #elif NGINX
         ngx_table_elt_t *h = *(ngx_table_elt_t **) ((char *) r + offsetof(ngx_http_request_t, headers_in.user_agent));
-        rv = h? makeNullTerminated(r->pool, h->value.data, h->value.len) : "";
+        rv = h? toStringSafety(r->pool, h->value.data, h->value.len) : "";
     #endif
 
     return rv;

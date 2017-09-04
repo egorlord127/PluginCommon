@@ -1,9 +1,15 @@
 #include "Util.h"
 #include <string.h>
+
+#ifndef MAX_SAVED_LENGTHS
+#define MAX_SAVED_LENGTHS (32)
+#endif
+
 static const char base64_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static inline int is_base64(unsigned char c) {
     return ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c == '+') || (c == '/'));
 }
+
 int base64_encode(const unsigned char* in, unsigned char* out, unsigned int in_len)
 {
     int length = 0;
@@ -166,24 +172,13 @@ char * ssorest_pstrcat(ngx_pool_t *a, ...)
 	return res;
 }
 
-char *toStringSafety(ngx_pool_t *pool, ngx_http_variable_value_t *v)
-{
-    if (v == NULL || v->not_found) {
-        return "";
-    }
-    char *dst = ngx_pnalloc(pool, v->len + 1);
-    strncpy(dst, (const char *) (v->data), v->len);
-    dst[v->len] = '\0';
-    return dst;
-}
-
-char *makeNullTerminated(ngx_pool_t *pool, u_char *str, int len)
+char *toStringSafety(ngx_pool_t *pool, u_char *str, int len)
 {
     if (str == NULL) {
         return "";
     }
     char *dst = ngx_pnalloc(pool, len + 1);
-    strncpy(dst, (const char *) (str), v->len);
-    dst[v->len] = '\0';
+    strncpy(dst, (const char *) (str), len);
+    dst[len] = '\0';
     return dst;
 }

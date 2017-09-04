@@ -16,6 +16,7 @@ char* processRequest(SSORestRequestObject* request, SSORestPlugin* plugin)
     if (jsonGatewayRequest == NULL)
         return "Null";
     // return "Not Null";
-    return json_object_to_json_string_ext(jsonGatewayRequest, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
+    char *ret = (char *) json_object_to_json_string_ext(jsonGatewayRequest, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
+    return ret;
     // sendJsonGatewayRequest(plugin->pluginConfiguration->gatewayUrl);
 }
