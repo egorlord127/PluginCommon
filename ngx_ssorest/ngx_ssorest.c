@@ -4,6 +4,8 @@
 
 #include "SSORestPlugin.h"
 static SSORestPlugin ssorest;
+static ngx_int_t ngx_ssorest_plugin_init(ngx_conf_t *cf);
+static ngx_int_t ngx_ssorest_plugin_request_handler(ngx_http_request_t *r);
 
 static void *createServerConfiguration(ngx_conf_t *cf);
 static char *setSSORestEnable(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
@@ -126,7 +128,7 @@ static ngx_http_module_t ngx_ssorest_plugin_module_ctx =
         NULL,
 
         /* postconfiguration */
-        NULL,
+        ngx_ssorest_plugin_init,
 
         /* create main configuration */
         NULL,
@@ -246,4 +248,40 @@ static char *setSSORestIgnoreUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_str_t *value = cf->args->elts;
     ssorest.pluginConfiguration->ignoreUrl = (char *) value[1].data;
     return NGX_CONF_OK;
+}
+
+/**
+ * Initializes the SSO/Rest Plugin
+ */
+static ngx_int_t ngx_ssorest_plugin_init(ngx_conf_t *cf) 
+{
+    ngx_http_handler_pt *h;
+    ngx_http_core_main_conf_t *cmcf;
+
+    cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
+
+    h = ngx_array_push(&cmcf->phases[NGX_HTTP_ACCESS_PHASE].handlers);
+    if (h == NULL) {
+        return NGX_ERROR;
+    }
+
+    *h = ngx_ssorest_plugin_request_handler;
+
+    // logNotice(cf->log, 0, "SSO/Rest Plugin initialized");
+
+    #if defined(SVN_REV) && defined(MOD_VER)
+        // logNotice(cf->log, 0, "SSO/Rest Plugin for NGINX v%s build %s", MOD_VER, SVN_REV);
+    #endif
+
+    return NGX_OK;
+}
+
+/**
+ * Plugin runtime request processor
+ */
+static ngx_int_t ngx_ssorest_plugin_request_handler(ngx_http_request_t *r)
+{
+    char *temp = processRequest(r, &ssorest);
+    ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0, "testcode:%s", temp);
+    return NGX_OK;
 }
