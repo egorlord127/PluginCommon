@@ -289,11 +289,11 @@ const char* getRemoteHost(SSORestRequestObject* r)
 }
 int getRemotePort(SSORestRequestObject* r)
 {
-    int rv = 0;
+    UINT rv = 0;
     #ifdef APACHE
-    rv = r->useragent_addr->port? r->useragent_addr->port : 0;
+        rv = r->useragent_addr->port? r->useragent_addr->port : 0;
     #elif NGINX
-
+        rv = ngx_inet_get_port(r->connection->sockaddr);
     #endif
 
     return rv;
