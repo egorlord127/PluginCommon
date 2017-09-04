@@ -269,9 +269,9 @@ const char* getRemoteAddr(SSORestRequestObject* r)
 {
     const char* rv; 
     #ifdef APACHE
-    rv = r->useragent_ip? r->useragent_ip : "";
+        rv = r->useragent_ip? r->useragent_ip : "";
     #elif NGINX
-
+        rv = makeNullTerminated(r->pool, r->connection->addr_text.data, r->connection->addr_text.len);
     #endif
 
     return rv;

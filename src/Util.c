@@ -175,4 +175,15 @@ char *toStringSafety(ngx_pool_t *pool, ngx_http_variable_value_t *v)
     strncpy(dst, (const char *) (v->data), v->len);
     dst[v->len] = '\0';
     return dst;
-}   
+}
+
+char *makeNullTerminated(ngx_pool_t *pool, u_char *str, int len)
+{
+    if (str == NULL) {
+        return "";
+    }
+    char *dst = ngx_pnalloc(pool, len + 1);
+    strncpy(dst, (const char *) (str), v->len);
+    dst[v->len] = '\0';
+    return dst;
+}
