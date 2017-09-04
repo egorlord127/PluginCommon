@@ -1,7 +1,6 @@
 DEFS=-DAPACHE=1 $(SHARED_CACHING)
 INCLUDES= \
     -I. \
-    -I../include \
 
 
 LIBS=-ljson-c

@@ -17,7 +17,7 @@ static const char *setSSORestPluginId(ngx_conf_t *cf, ngx_command_t *cmd, void *
 static const char *setSSORestSecretKey(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 static const char *setSSORestSSOZone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 static const char *setSSORestIgnoreExt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-static const char *setSSORestIgnoreUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+// static const char *setSSORestIgnoreUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 
 static ngx_command_t moduleDirectives[] = {
         {

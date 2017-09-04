@@ -116,3 +116,63 @@ void generateSecureRandomString(char *s, const int length)
 
     s[length] = '\0';
 }
+
+char * ssorest_pstrcat(ngx_pool_t *a, ...)
+{
+	char *cp, *argp, *res;
+	size_t saved_lengths[MAX_SAVED_LENGTHS];
+	int nargs = 0;
+
+	/* Pass one --- find length of required string */
+
+	size_t len = 0;
+	va_list adummy;
+
+	va_start(adummy, a);
+
+	while ( (cp = va_arg(adummy, char *)) != NULL ) {
+		size_t cplen = strlen(cp);
+		if ( nargs < MAX_SAVED_LENGTHS ) {
+			saved_lengths[nargs++] = cplen;
+		}
+		len += cplen;
+	}
+
+	va_end(adummy);
+
+	/* Allocate the required string */
+
+	res = (char *) ngx_pcalloc(a, len + 1);
+	cp = res;
+
+	/* Pass two --- copy the argument strings into the result space */
+
+	va_start(adummy, a);
+
+	nargs = 0;
+	while ( (argp = va_arg(adummy, char *)) != NULL ) {
+		if ( nargs < MAX_SAVED_LENGTHS ) {
+			len = saved_lengths[nargs++];
+		} else {
+			len = strlen(argp);
+		}
+		memcpy(cp, argp, len);
+		cp += len;
+	}
+
+	va_end(adummy);
+
+	*cp = '\0';
+	return res;
+}
+
+char *toStringSafety(ngx_pool_t *pool, ngx_http_variable_value_t *v)
+{
+    if (v == NULL || v->not_found) {
+        return "";
+    }
+    char *dst = ngx_pnalloc(pool, v->len + 1);
+    strncpy(dst, (const char *) (v->data), v->len);
+    dst[v->len] = '\0';
+    return dst;
+}   

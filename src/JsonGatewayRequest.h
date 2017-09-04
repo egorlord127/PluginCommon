@@ -26,9 +26,14 @@ const char*         getScheme(SSORestRequestObject*);
 const char*         getServerName(SSORestRequestObject*);
 int                 getServerPort(SSORestRequestObject*);
 ssorest_array_t*    getLocales(SSORestRequestObject*);
-const char* getAcceptLanguage(SSORestRequestObject*);
-const char* getConnection(SSORestRequestObject*);
-const char* getAccept(SSORestRequestObject*);
-const char* getHost(SSORestRequestObject*);
-const char* getAcceptEncoding(SSORestRequestObject*);
-const char* getUserAgent(SSORestRequestObject*);
+const char*         getAcceptLanguage(SSORestRequestObject*);
+const char*         getConnection(SSORestRequestObject*);
+const char*         getAccept(SSORestRequestObject*);
+const char*         getHost(SSORestRequestObject*);
+const char*         getAcceptEncoding(SSORestRequestObject*);
+const char*         getUserAgent(SSORestRequestObject*);
+int                 isDefaultPort(int port);
+
+#ifdef NGINX
+ngx_int_t get_ngx_http_request_headers(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data);
+#endif

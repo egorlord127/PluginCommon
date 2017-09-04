@@ -1,4 +1,5 @@
 #include "JsonGatewayRequest.h"
+#include "Util.h"
 JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject* request)
 {
     JSonGatewayRequest *jsonGatewayRequest = json_object_new_object();
@@ -60,7 +61,7 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject* request)
     // locales
     json_object* jsonarray_locale = json_object_new_array();
     ssorest_array_t* locales = getLocales(request);
-    int i;
+    UINT i;
     for (i = 0; i < locales->nelts; i++)
     {
         #ifdef APACHE
@@ -140,14 +141,22 @@ const char* getMethod(SSORestRequestObject* r)
 }
 const char* getUrl(SSORestRequestObject* r)
 {
-    const char* rv; 
-    #ifdef APACHE
-    rv = r->uri? r->uri : "";
-    #elif NGINX
+#ifdef APACHE
+    return ap_construct_url(r->pool, r->uri, r);
+#elif NGINX
+    const char *server_name = getServerName(r);
+    const char *scheme = getScheme(r);
+    int  port = getServerPort(r);
 
-    #endif
+    if (isDefaultPort(port))
+    {
+        return ssorest_pstrcat(r->pool, scheme, "://", server_name, (char *) r->uri.data, NULL);
+    }
 
-    return rv;
+    char *portwithcomma = ngx_pnalloc(r->pool, sizeof(":65535") - 1);
+    ngx_sprintf((u_char *) portwithcomma, ":ui", port);
+    return ssorest_pstrcat(r->pool, scheme, "://", server_name, portwithcomma, (char *) r->uri.data, NULL);
+#endif
 }
 const char* getUri(SSORestRequestObject* r)
 {
@@ -348,7 +357,7 @@ ssorest_array_t* getLocales(SSORestRequestObject* r)
         end = start + strlen(start);
         langs_array = apr_array_make(r->pool, 1, sizeof(const char*));
     #elif NGINX
-        start = r->headers_in.accept_language? r->headers_in.accept_language->value.data : NULL;
+        start = r->headers_in.accept_language? (char *) r->headers_in.accept_language->value.data : NULL;
         end = start? (start + r->headers_in.accept_language->value.len) : (NULL);
         langs_array = ngx_array_create(r->pool, 1, sizeof(ngx_str_t));
     #endif
@@ -369,7 +378,7 @@ ssorest_array_t* getLocales(SSORestRequestObject* r)
         #elif NGINX
             ngx_str_t* ele = ngx_array_push(langs_array);
             ele->len = pos-start;
-            ele->data = lang;
+            ele->data = (u_char *) lang;
         #endif
 
         // We discard the quality value
@@ -392,7 +401,14 @@ const char* getAcceptLanguage(SSORestRequestObject* r)
     #ifdef APACHE
         rv = apr_table_get(r->headers_in, "Accept-Language");
     #elif NGINX
-
+        #if (NGX_HTTP_HEADERS)
+            ngx_http_variable_value_t *v;
+            v = ngx_pcalloc(r->pool, sizeof(ngx_http_variable_value_t));
+            get_ngx_http_request_headers(r, v, offsetof(ngx_http_request_t, headers_in.accept_language));
+            rv = toStringSafety(r->pool, v);
+        #else
+            rv = NULL;
+        #endif
     #endif
     return rv;
 }
@@ -402,7 +418,15 @@ const char* getConnection(SSORestRequestObject* r)
     #ifdef APACHE
         rv = apr_table_get(r->headers_in, "Connection");
     #elif NGINX
-
+        if (r->headers_out.status == NGX_HTTP_SWITCHING_PROTOCOLS) {
+            rv = "upgrade";
+        }
+        else if (r->keepalive) {
+            rv = "keep-alive";
+        }
+        else {
+            rv = "close";
+        }
     #endif
     return rv;
 }
@@ -412,7 +436,14 @@ const char* getAccept(SSORestRequestObject* r)
     #ifdef APACHE
         rv = apr_table_get(r->headers_in, "Accept");
     #elif NGINX
-
+        #if (NGX_HTTP_HEADERS)
+            ngx_http_variable_value_t *v;
+            v = ngx_pcalloc(r->pool, sizeof(ngx_http_variable_value_t));
+            get_ngx_http_request_headers(r, v, offsetof(ngx_http_request_t, headers_in.accept));
+            rv = toStringSafety(r->pool, v);
+        #else
+            rv = NULL;
+        #endif
     #endif
     return rv;
 }
@@ -446,3 +477,28 @@ const char* getUserAgent(SSORestRequestObject* r)
     #endif
     return rv;
 }
+int isDefaultPort(int port)
+{
+    return (port == 80);
+}
+
+#ifdef NGINX
+ngx_int_t get_ngx_http_request_headers(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+{
+    ngx_table_elt_t *h;
+    h = *(ngx_table_elt_t **) ((char *) r + data);
+
+    if (h) {
+        v->len = h->value.len;
+        v->valid = 1;
+        v->no_cacheable = 0;
+        v->not_found = 0;
+        v->data = h->value.data;
+
+    }
+    else {
+        v->not_found = 1;
+    }
+    return NGX_OK;
+}
+#endif
