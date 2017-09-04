@@ -33,7 +33,3 @@ const char*         getHost(SSORestRequestObject*);
 const char*         getAcceptEncoding(SSORestRequestObject*);
 const char*         getUserAgent(SSORestRequestObject*);
 int                 isDefaultPort(int port);
-
-#ifdef NGINX
-ngx_int_t get_ngx_http_request_headers(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data);
-#endif
