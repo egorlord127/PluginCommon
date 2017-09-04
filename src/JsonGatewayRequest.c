@@ -308,16 +308,17 @@ int getSecure(SSORestRequestObject* r)
 }
 const char* getScheme(SSORestRequestObject* r)
 {
-    int port = getServerPort(r);
-    switch (port)
-    {
-        case 80: 
-            return "http";
-        case 443: 
-            return "https";
-        default: 
-            return "";
-    }
+    const char *rv;
+    #ifdef APACHE
+        rv = ap_http_scheme(r);
+    #elif NGINX
+        #if (NGX_HTTP_SSL)
+            if (r->connection->ssl) rv = "https";
+        #else
+            rv = "http";
+        #endif
+    #endif
+    return rv;
 }
 const char* getServerName(SSORestRequestObject* r)
 {
