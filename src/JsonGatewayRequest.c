@@ -65,10 +65,11 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject* request)
     for (i = 0; i < locales->nelts; i++)
     {
         #ifdef APACHE
-        const char *s = ((const char**)locales->elts)[i];
-        json_object_array_add(jsonarray_locale, json_object_new_string((char*) s));
+            const char *s = ((const char**)locales->elts)[i];
+            json_object_array_add(jsonarray_locale, json_object_new_string((char*) s));
         #elif NGINX
-
+            u_char *s = ((ngx_str_t *)locales->elts)[i].data;
+            json_object_array_add(jsonarray_locale, json_object_new_string((char*) s));
         #endif
         
     }
