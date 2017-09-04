@@ -1,8 +1,26 @@
 #include "JsonGatewayRequest.h"
 #include "Util.h"
+static void ssorest_json_cleanup(void *data);
+
 JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject* request)
 {
     JSonGatewayRequest *jsonGatewayRequest = json_object_new_object();
+
+    // Add Cleanup handler
+    #ifdef APACHE
+        apr_pool_cleanup_register(request->pool, jsonGatewayRequest, (void *) json_object_put, apr_pool_cleanup_null);
+    #elif NGINX
+        ngx_pool_cleanup_t  *cln;
+        
+        cln = ngx_pool_cleanup_add(request->pool, 0);
+        if (cln == NULL) 
+        {
+             // TODO: Error Handling
+        }
+        
+        cln->handler = ssorest_json_cleanup;
+        cln->data = jsonGatewayRequest;
+    #endif
 
     // method
     json_object_object_add(jsonGatewayRequest, "method", json_object_new_string(getMethod(request)));
@@ -514,4 +532,9 @@ const char* getUserAgent(SSORestRequestObject* r)
 int isDefaultPort(int port)
 {
     return (port == 80);
+}
+
+static void ssorest_json_cleanup(void *data)
+{
+    json_object_put((json_object *) data);
 }
