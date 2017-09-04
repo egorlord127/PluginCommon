@@ -142,7 +142,7 @@ const char* getMethod(SSORestRequestObject* r)
 const char* getUrl(SSORestRequestObject* r)
 {
     #ifdef APACHE
-        return ap_construct_url(r->pool, r->uri, r);
+        return ap_construct_url(r->pool, r->unparsed_uri, r);
     #elif NGINX
         const char *server_name = getServerName(r);
         const char *scheme = getScheme(r);
@@ -150,12 +150,12 @@ const char* getUrl(SSORestRequestObject* r)
 
         if (isDefaultPort(port))
         {
-            return ssorest_pstrcat(r->pool, scheme, "://", server_name, (char *) r->uri.data, NULL);
+            return ssorest_pstrcat(r->pool, scheme, "://", server_name, toStringSafety(r->pool, r->unparsed_uri.data, r->unparsed_uri.len), NULL);
         }
 
         char *portwithcomma = ngx_pnalloc(r->pool, sizeof(":65535") - 1);
-        ngx_sprintf((u_char *) portwithcomma, ":ui", port);
-        return ssorest_pstrcat(r->pool, scheme, "://", server_name, portwithcomma, (char *) r->uri.data, NULL);
+        ngx_sprintf((u_char *) portwithcomma, ":%ui", port);
+        return ssorest_pstrcat(r->pool, scheme, "://", server_name, portwithcomma, toStringSafety(r->pool, r->unparsed_uri.data, r->unparsed_uri.len), NULL);
     #endif
 }
 

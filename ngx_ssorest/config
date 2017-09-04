@@ -16,10 +16,10 @@ ngx_module_srcs="\
     $ngx_addon_dir/ngx_ssorest.c\
     
 "
-ngx_module_libs="-lcurl `xml2-config --libs`"
+ngx_module_libs="-lcurl -ljson-c -lcrypto"
 ngx_module_order=
 
-CFLAGS="$CFLAGS `xml2-config --cflags` -DNGINX=1 "
+CFLAGS="$CFLAGS -DNGINX=1 "
 
 . auto/module
 CORE_LIBS="$CORE_LIBS"
