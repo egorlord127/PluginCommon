@@ -1,6 +1,14 @@
+#include "Global.h"
 #include "JsonGatewayRequest.h"
 #include "Util.h"
-static void ssorest_json_cleanup(void *data);
+
+#ifdef NGINX
+static void ssorest_json_cleanup(void *data)
+{
+    json_object_put((json_object *) data);
+}
+#endif
+
 
 JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject* request)
 {
@@ -534,7 +542,3 @@ int isDefaultPort(int port)
     return (port == 80);
 }
 
-static void ssorest_json_cleanup(void *data)
-{
-    json_object_put((json_object *) data);
-}

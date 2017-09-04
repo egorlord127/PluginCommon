@@ -123,7 +123,7 @@ void generateSecureRandomString(char *s, const int length)
     s[length] = '\0';
 }
 
-char * ssorest_pstrcat(ngx_pool_t *a, ...)
+char * ssorest_pstrcat(SSORestPluginPool *a, ...)
 {
 	char *cp, *argp, *res;
 	size_t saved_lengths[MAX_SAVED_LENGTHS];
