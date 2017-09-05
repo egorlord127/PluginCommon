@@ -7,7 +7,7 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
     {
         logError(r, "Could not parse because of empty json string");
         *res = NULL;
-        return 500;
+        return SSOREST_ERROR;
     }
     if (*res == NULL)
     {
@@ -18,7 +18,7 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
     jsonGatewayResponse->json = json_tokener_parse_verbose(jsonString, &jerr);
     if (jsonGatewayResponse->json == NULL) {
         logError(r, "Failed to parse gateway response, error= %s", json_tokener_error_desc(jerr));
-        return 500;
+        return SSOREST_ERROR;
     }
 
     // const char *pretty = json_object_to_json_string_ext(jsonGatewayResponse->json, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
@@ -39,5 +39,5 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
 
     jsonGatewayResponse->status = json_object_get_int(jsonGatewayResponseStatus);
     logError(r, "TESTCODE:%d:%d", jsonGatewayResponse->status, sizeof(*jsonGatewayResponse));
-    return 0;
+    return SSOREST_OK;
 }

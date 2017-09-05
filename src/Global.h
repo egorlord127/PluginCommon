@@ -50,3 +50,7 @@
     #define logInfo(r,   ...) 	ngx_log_error_core(NGX_LOG_INFO,    r->connection->log, 0, __VA_ARGS__)
     #define logDebug(r,  ...) 	ngx_log_error_core(NGX_LOG_DEBUG,   r->connection->log, 0, __VA_ARGS__)
 #endif
+
+#define SSOREST_OK       0
+#define SSOREST_ERROR    1
+#define SC_NOT_EXTENDED  510

@@ -33,7 +33,8 @@ char* processRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf)
     JSonGatewayRequest  *jsonGatewayRequest;
     JSonGatewayResponse *jsonGatewayResponse = NULL;
     jsonGatewayRequest = buildJsonGatewayRequest(r, conf);
-    parseJsonGatewayResponse(r, conf, sendJsonGatewayRequest(r, conf, jsonGatewayRequest), &jsonGatewayResponse);
+    if (parseJsonGatewayResponse(r, conf, sendJsonGatewayRequest(r, conf, jsonGatewayRequest), &jsonGatewayResponse) == SSOREST_ERROR)
+        return "Error";
     
 
     logError(r, "Gateway provided response status = %d", jsonGatewayResponse->status);
