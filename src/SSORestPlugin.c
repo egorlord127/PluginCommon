@@ -16,9 +16,15 @@ SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
     conf->pluginId               = NULL;
     conf->secretKey              = NULL;
     conf->gatewayToken           = NULL;
-    conf->ssoZone                = NULL;
-    conf->ignoreExt              = NULL;
-    conf->ignoreUrl              = NULL;
+    #ifdef APACHE
+        conf->ssoZone            = ssorest_array_create(pool, 1, sizeof(const char *));
+        conf->ignoreExt          = ssorest_array_create(pool, 1, sizeof(const char *));
+        conf->ignoreUrl          = ssorest_array_create(pool, 1, sizeof(const char *));
+    #elif NGINX
+        conf->ssoZone            = ssorest_array_create(pool, 1, sizeof(ngx_str_t));
+        conf->ignoreExt          = ssorest_array_create(pool, 1, sizeof(ngx_str_t));
+        conf->ignoreUrl          = ssorest_array_create(pool, 1, sizeof(ngx_str_t));
+    #endif
     
     return conf;
 }

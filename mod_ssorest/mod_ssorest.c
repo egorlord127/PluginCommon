@@ -1,5 +1,10 @@
 #include "Global.h"
 #include "SSORestPlugin.h"
+
+static void register_hooks(apr_pool_t *pool);
+static int process(request_rec *r);
+
+static void *createServerConfiguration(apr_pool_t *p, server_rec *server);
 static const char *setSSORestEnable(cmd_parms *parms, void *cfg, const char* arg);
 static const char *setSSORestTrace(cmd_parms *parms, void *cfg, const char *arg);
 static const char *setSSORestUseServerNameAsDefault(cmd_parms *parms, void *cfg, const char *arg);
@@ -12,8 +17,7 @@ static const char *setSSORestSecretKey(cmd_parms *parms, void *cfg, const char *
 static const char *setSSORestSSOZone(cmd_parms *parms, void *cfg, const char *arg);
 static const char *setSSORestIgnoreExt(cmd_parms *parms, void *cfg, const char *arg);
 static const char *setSSORestIgnoreUrl(cmd_parms *parms, void *cfg, const char *arg);
-static void register_hooks(apr_pool_t *pool);
-static void *createServerConfiguration(apr_pool_t *p, server_rec *server);
+
 static const command_rec moduleDirectives[] = 
 {
     AP_INIT_TAKE1("SSORestEnabled", setSSORestEnable, NULL, OR_ALL, "Enable or disable mod_ssorest"),
@@ -42,6 +46,11 @@ module AP_MODULE_DECLARE_DATA   ssorest_module =
     register_hooks
 };
 
+
+static void *createServerConfiguration(apr_pool_t *p, server_rec *server)
+{
+    return createPluginConfiguration(p);
+}
 
 static const char *setSSORestEnable(cmd_parms *parms, void *cfg, const char *arg)
 {
@@ -103,20 +112,20 @@ static const char *setSSORestSecretKey(cmd_parms *parms, void *cfg, const char *
 }
 static const char *setSSORestSSOZone(cmd_parms *parms, void *cfg, const char *arg)
 {
-    // SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
-    // *(const char**)apr_array_push(conf->ssoZone) = arg;
+    SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
+    *(const char**)apr_array_push(conf->ssoZone) = arg;
     return NULL;
 }
 static const char *setSSORestIgnoreExt(cmd_parms *parms, void *cfg, const char *arg)
 {
-    // SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
-    // *(const char**)apr_array_push(conf->ignoreExt) = arg;
+    SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
+    *(const char**)apr_array_push(conf->ignoreExt) = arg;
     return NULL;
 }
 static const char *setSSORestIgnoreUrl(cmd_parms *parms, void *cfg, const char *arg)
 {
-    // SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
-    // *(const char**)apr_array_push(conf->ignoreUrl) = arg;
+    SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
+    *(const char**)apr_array_push(conf->ignoreUrl) = arg;
     return NULL;
 }
 
@@ -134,7 +143,4 @@ static void register_hooks(apr_pool_t *pool)
     ap_hook_check_access(process, NULL, NULL, APR_HOOK_LAST, AP_AUTH_INTERNAL_PER_URI);
 }
 
-static void *createServerConfiguration(apr_pool_t *p, server_rec *server)
-{
-    return createPluginConfiguration(p);
-}
+

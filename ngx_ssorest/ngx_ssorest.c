@@ -17,22 +17,7 @@ static char *setSSORestSecretKey(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestSSOZone(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestIgnoreExt(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestIgnoreUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
-typedef struct {
-    ngx_flag_t enable;
-    ngx_flag_t trace_enable;
-    ngx_flag_t useServerNameAsDefault;
-    ngx_flag_t sendFormParameters;
-    ngx_str_t acoName;
-    ngx_str_t gatewayUrl;
-    ngx_str_t localrootpath;
-    ngx_str_t pluginId;
-    ngx_str_t secretKey;
-    ngx_str_t gatewayToken;
-    ngx_array_t *ssoZone;
-    ngx_array_t *ignoreExt;
-    ngx_array_t *ignoreUrl;
-    ngx_pool_t *cf_pool; // TODO saving the cf pool so we can store gatewayTokens in it, is this the right technique?
-} ngx_ssorest_plugin_conf_t;
+
 static ngx_command_t moduleDirectives[] = {
         {
         ngx_string("SSORestEnabled"),
@@ -258,12 +243,6 @@ static char *setSSORestSSOZone(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
     ngx_str_t *ssozone;
     ngx_uint_t i;
 
-    if (conf->ssoZone == NULL) {
-        conf->ssoZone = ngx_array_create(cf->pool, 1, sizeof(ngx_str_t));
-        if (conf->ssoZone == NULL) {
-            return NGX_CONF_ERROR ;
-        }
-    }
     value = cf->args->elts;
     for (i = 1; i < cf->args->nelts; i++) {
         ssozone = ngx_array_push(conf->ssoZone);
@@ -280,12 +259,6 @@ static char *setSSORestIgnoreExt(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
     ngx_str_t *ignore;
     ngx_uint_t i;
 
-    if (conf->ignoreExt == NULL) {
-        conf->ignoreExt = ngx_array_create(cf->pool, 1, sizeof(ngx_str_t));
-        if (conf->ignoreExt == NULL) {
-            return NGX_CONF_ERROR ;
-        }
-    }
     value = cf->args->elts;
     for (i = 1; i < cf->args->nelts; i++) {
         ignore = ngx_array_push(conf->ignoreExt);
@@ -302,12 +275,6 @@ static char *setSSORestIgnoreUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
     ngx_str_t *ignore;
     ngx_uint_t i;
 
-    if (conf->ignoreUrl == NULL) {
-        conf->ignoreUrl = ngx_array_create(cf->pool, 1, sizeof(ngx_str_t));
-        if (conf->ignoreUrl == NULL) {
-            return NGX_CONF_ERROR ;
-        }
-    }
     value = cf->args->elts;
     for (i = 1; i < cf->args->nelts; i++) {
         ignore = ngx_array_push(conf->ignoreUrl);
