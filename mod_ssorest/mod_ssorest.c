@@ -104,17 +104,17 @@ static const char *setSSORestSecretKey(cmd_parms *cmd, void *cfg, const char *ar
 }
 static const char *setSSORestSSOZone(cmd_parms *cmd, void *cfg, const char *arg)
 {
-    ssorest.pluginConfiguration->ssoZone = arg;
+    // ssorest.pluginConfiguration->ssoZone = arg;
     return NULL;
 }
 static const char *setSSORestIgnoreExt(cmd_parms *cmd, void *cfg, const char *arg)
 {
-    ssorest.pluginConfiguration->ignoreExt = arg;
+    // ssorest.pluginConfiguration->ignoreExt = arg;
     return NULL;
 }
 static const char *setSSORestIgnoreUrl(cmd_parms *cmd, void *cfg, const char *arg)
 {
-    ssorest.pluginConfiguration->ignoreUrl = arg;
+    // ssorest.pluginConfiguration->ignoreUrl = arg;
     return NULL;
 }
 

@@ -1,5 +1,6 @@
 #include "Global.h"
 #include "JsonGatewayRequest.h"
+#include "SSORestPlugin.h"
 #include "Util.h"
 
 #ifdef NGINX
@@ -10,7 +11,7 @@ static void ssorest_json_cleanup(void *data)
 #endif
 
 
-JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , ssorest_array_t *ssoZone, int sendFormParameters)
+JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , SSORestPluginConfigration *conf)
 {
     JSonGatewayRequest *jsonGatewayRequest = json_object_new_object();
 
@@ -152,18 +153,18 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , ssor
         cookie_value = ssorest_pcalloc(request->pool, strlen(cookie));
         sscanf(cookie, "%[^=]=%s", cookie_name, cookie_value);
 
-        if(ssoZone)
+        if(conf->ssoZone)
         {
             UINT i;
             UINT flag = 0;
-            for(i = 0; i < ssoZone->nelts; i++)
+            for(i = 0; i < conf->ssoZone->nelts; i++)
             {
                 #ifdef APACHE
-                    const char *ssozone = ((const char**)ssoZone->elts)[i];
+                    const char *ssozone = ((const char**)conf->ssoZone->elts)[i];
                     UINT ssozone_len = strlen(ssozone);
                 #elif NGINX
-                    const char *ssozone = (const char *) (((ngx_str_t *)ssoZone->elts)[i].data);
-                    UINT ssozone_len = ((ngx_str_t *)ssoZone->elts)[i].len;
+                    const char *ssozone = (const char *) (((ngx_str_t *)conf->ssoZone->elts)[i].data);
+                    UINT ssozone_len = ((ngx_str_t *)conf->ssoZone->elts)[i].len;
                 #endif
                 if (!strncasecmp((char *) cookie_name, ssozone, ssozone_len)) {
                     logError(request, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
@@ -186,7 +187,7 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , ssor
     json_object_object_add(jsonGatewayRequest, "cookies", jsonGatewayRequestCookies);
 
     // parameters
-    if (sendFormParameters)
+    if (conf->sendFormParameters)
     {
         json_object *jsonGatewayRequestParameters = json_object_new_object();
         json_object *json_temp = NULL;
@@ -257,6 +258,19 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , ssor
     
 
     // attributes
+    json_object *jsonGatewayRequestAttributes = json_object_new_object();
+    if (conf->acoName)
+        json_object_object_add(jsonGatewayRequestAttributes, "acoName", json_object_new_string(conf->acoName));
+    
+    if (conf->pluginId) 
+        json_object_object_add(jsonGatewayRequestAttributes, "pluginID", json_object_new_string(conf->pluginId));
+
+    if (conf->gatewayToken) 
+        json_object_object_add(jsonGatewayRequestAttributes, "gatewayToken", json_object_new_string(conf->gatewayToken));
+    
+
+    json_object_object_add(jsonGatewayRequest, "attributes", jsonGatewayRequestAttributes);
+
     return jsonGatewayRequest;
 }
 

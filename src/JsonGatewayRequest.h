@@ -3,7 +3,7 @@
 #include <json-c/json.h>
 #include "Global.h"
 
-JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject*, ssorest_array_t*, int);
+JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject*, SSORestPluginConfigration*);
 void sendJsonGatewayRequest(const char*);
 void setJsonGatewayRequestAttributes(JSonGatewayRequest* , const char*, const char*);
 

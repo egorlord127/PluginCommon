@@ -233,20 +233,20 @@ static char *setSSORestSecretKey(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 }
 static char *setSSORestSSOZone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-    ngx_str_t *value = cf->args->elts;
-    ssorest.pluginConfiguration->ssoZone = (char *) value[1].data;
+    // ngx_str_t *value = cf->args->elts;
+    // ssorest.pluginConfiguration->ssoZone = (char *) value[1].data;
     return NGX_CONF_OK;
 }
 static char *setSSORestIgnoreExt(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-    ngx_str_t *value = cf->args->elts;
-    ssorest.pluginConfiguration->ignoreExt = (char *) value[1].data;
+    // ngx_str_t *value = cf->args->elts;
+    // ssorest.pluginConfiguration->ignoreExt = (char *) value[1].data;
     return NGX_CONF_OK;
 }
 static char *setSSORestIgnoreUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-    ngx_str_t *value = cf->args->elts;
-    ssorest.pluginConfiguration->ignoreUrl = (char *) value[1].data;
+    // ngx_str_t *value = cf->args->elts;
+    // ssorest.pluginConfiguration->ignoreUrl = (char *) value[1].data;
     return NGX_CONF_OK;
 }
 
