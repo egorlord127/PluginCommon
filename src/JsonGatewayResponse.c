@@ -33,11 +33,11 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
 
     json_object_object_get_ex(jsonGatewayResponse->json, "response", &jsonGatewayResponse->jsonResponse);
     json_object_object_get_ex(jsonGatewayResponse->json, "request", &jsonGatewayResponse->jsonRequest);
-
+    json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "body", &jsonGatewayResponse->jsonResponseBody);
+    
     json_object *jsonGatewayResponseStatus;
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "status", &jsonGatewayResponseStatus);
-
     jsonGatewayResponse->status = json_object_get_int(jsonGatewayResponseStatus);
-    logError(r, "TESTCODE:%d:%d", jsonGatewayResponse->status, sizeof(*jsonGatewayResponse));
+    
     return SSOREST_OK;
 }

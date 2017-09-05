@@ -8,6 +8,7 @@ struct JSonGatewayResponse{
     json_object *json;
     json_object *jsonRequest;
     json_object *jsonResponse;
+    json_object *jsonResponseBody;
     json_object *jsonResponseHeader;
     json_object *jsonResponseCookies;
     int status;

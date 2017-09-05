@@ -35,14 +35,23 @@ char* processRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf)
     jsonGatewayRequest = buildJsonGatewayRequest(r, conf);
     if (parseJsonGatewayResponse(r, conf, sendJsonGatewayRequest(r, conf, jsonGatewayRequest), &jsonGatewayResponse) == SSOREST_ERROR)
         return "Error";
-    
 
     logError(r, "Gateway provided response status = %d", jsonGatewayResponse->status);
+    if (jsonGatewayResponse->status == SC_NOT_EXTENDED)
+    {
+        const char *bodyContent = json_object_get_string(jsonGatewayResponse->jsonResponseBody);
+        char *p = NULL;
+        if (bodyContent)
+            p = strstr(bodyContent, "Signature Needed");
+        if (p)
+        {
+            // handleSignatureRequired();
+        }
+        else 
+        {
+            // handleSendLocalFile
+        }
+
+    }
     return "OK";
-    // if (jsonGatewayRequest == NULL)
-    //     return "Null";
-    // // return "Not Null";
-    // char *ret = (char *) json_object_to_json_string_ext(jsonGatewayRequest, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
-    // return ret;
-    // sendJsonGatewayRequest(plugin->pluginConfiguration->gatewayUrl);
 }
