@@ -12,8 +12,15 @@ static void ssorest_json_cleanup(void *data)
 {
     json_object_put((json_object *) data);
 }
+static void ssorest_curl_easy_cleanup(void *data)
+{
+    curl_easy_cleanup((CURL *) data);
+}
+static void ssorest_curl_slist_free_all(void *data)
+{
+    curl_slist_free_all((struct curl_slist *) data);
+}
 #endif
-
 
 JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , SSORestPluginConfigration *conf)
 {
@@ -302,6 +309,8 @@ void sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration* 
     curl_easy_setopt(curl, CURLOPT_URL, conf->gatewayUrl);
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_object_to_json_string(jsonRequest));
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlRecvData);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, curl_context_rec);
 
     // Add Debugging Options
     if(conf->isTraceEnabled)
@@ -311,9 +320,7 @@ void sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration* 
         // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);        
     }
 
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlRecvData);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, curl_context_rec);
-    
+
     curl_result_code = curl_easy_perform(curl);
     if (curl_result_code != CURLE_OK)
     {
@@ -797,7 +804,16 @@ static CURL* get_curl_session(SSORestRequestObject* r, SSORestPluginConfigration
             #ifdef APACHE
 			    apr_pool_cleanup_register(conf->cf_pool, conf->curl_session, (void *)curl_easy_cleanup, apr_pool_cleanup_null);
             #elif NGINX
-
+                ngx_pool_cleanup_t  *cln;
+                
+                cln = ngx_pool_cleanup_add(conf->cf_pool, 0);
+                if (cln == NULL) 
+                {
+                    // TODO: Error Handling
+                }
+                
+                cln->handler = ssorest_curl_easy_cleanup;
+                cln->data = conf->curl_session;
             #endif
 
             curl_easy_setopt(conf->curl_session, CURLOPT_TIMEOUT, 30);
@@ -813,7 +829,16 @@ static CURL* get_curl_session(SSORestRequestObject* r, SSORestPluginConfigration
                 #ifdef APACHE
 				    apr_pool_cleanup_register(r->server->process->pool, headers, (void *) curl_slist_free_all, apr_pool_cleanup_null);
                 #elif NGINX
-
+                    ngx_pool_cleanup_t  *cln;
+                    
+                    cln = ngx_pool_cleanup_add(conf->cf_pool, 0);
+                    if (cln == NULL) 
+                    {
+                        // TODO: Error Handling
+                    }
+                    
+                    cln->handler = ssorest_curl_slist_free_all;
+                    cln->data = headers;
                 #endif
 
                 curl_easy_setopt(conf->curl_session, CURLOPT_HTTPHEADER, headers);
