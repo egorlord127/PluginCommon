@@ -9,6 +9,7 @@ LIBS=-ljson-c -lcurl
 SOURCES= \
     mod_ssorest.c \
     ../src/SSORestPlugin.c \
+	../src/RequestInfo.c \
 	../src/JsonGatewayRequest.c \
 	../src/JsonGatewayResponse.c \
 	../src/Util.c \

@@ -5,6 +5,7 @@ ngx_module_deps="\
 	$ngx_addon_dir/../src/Global.h\
     $ngx_addon_dir/../src/Util.h\
     $ngx_addon_dir/../src/CurlWrapper.h\
+    $ngx_addon_dir/../src/RequestInfo.h\
 	$ngx_addon_dir/../src/JsonGatewayRequest.h\
     $ngx_addon_dir/../src/JsonGatewayResponse.h\
     $ngx_addon_dir/../src/SSORestPlugin.h\
@@ -12,6 +13,7 @@ ngx_module_deps="\
 ngx_module_srcs="\
     $ngx_addon_dir/../src/Util.c\
     $ngx_addon_dir/../src/CurlWrapper.c\
+    $ngx_addon_dir/../src/RequestInfo.c\
 	$ngx_addon_dir/../src/JsonGatewayRequest.c\
     $ngx_addon_dir/../src/JsonGatewayResponse.c\
     $ngx_addon_dir/../src/SSORestPlugin.c\
