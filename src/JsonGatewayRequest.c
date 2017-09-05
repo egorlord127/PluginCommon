@@ -315,11 +315,10 @@ void sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration* 
     // Add Debugging Options
     if(conf->isTraceEnabled)
     {
-        // curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, trace_libcurl);
-        // curl_easy_setopt(curl, CURLOPT_DEBUGDATA, r);
-        // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);        
+        curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, CurlTraceDebug);
+        curl_easy_setopt(curl, CURLOPT_DEBUGDATA, r);
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     }
-
 
     curl_result_code = curl_easy_perform(curl);
     if (curl_result_code != CURLE_OK)
