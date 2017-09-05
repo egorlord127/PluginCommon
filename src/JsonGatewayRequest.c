@@ -10,7 +10,7 @@ static void ssorest_json_cleanup(void *data)
 #endif
 
 
-JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject* request)
+JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , ssorest_array_t *ssoZone, int sendFormParameters)
 {
     JSonGatewayRequest *jsonGatewayRequest = json_object_new_object();
 
@@ -137,8 +137,53 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject* request)
     // headers
     json_object_object_add(jsonGatewayRequest, "headers", jsonGatewayRequestHeaders);
 
-    // // cookies
-    
+    // cookies
+    json_object* jsonGatewayRequestCookies = json_object_new_array();
+    const char *cookiestring = getCookies(request);
+    char *rest = (char *) cookiestring;
+    char *cookie_name = NULL;
+    char *cookie_value = NULL;
+    char *cookie = NULL;
+    while ((cookie = strtok_r(rest, "; ", &rest)))
+    {
+        json_object *json_cookies = json_object_new_object();
+
+        cookie_name = ssorest_pcalloc(request->pool, strlen(cookie));
+        cookie_value = ssorest_pcalloc(request->pool, strlen(cookie));
+        sscanf(cookie, "%[^=]=%s", cookie_name, cookie_value);
+
+        // if(ssoZone)
+        // {
+        //     size_t size;
+        //     ngx_uint_t i;
+        //     ngx_uint_t flag = 0;
+        //     ngx_str_t *ssozone;
+
+        //     size = ssoZone->nelts;
+        //     ssozone = ssoZone->elts;
+
+        //     for(i = 0; i < size; i++)
+        //     {
+        //         if (!strncasecmp((char *) cookie_name, (char *) ssozone[i].data, ssozone[i].len)) {
+        //             logDebug(r->connection->log, 0, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
+        //             json_object_object_add(json_cookies, "name", json_object_new_string((const char*) cookie_name));
+        //             json_object_object_add(json_cookies, "value", json_object_new_string((const char*) cookie_value));
+        //             json_object_array_add(json, json_cookies);
+        //             flag = 1;
+        //             break;
+        //         }
+        //     }
+        //     if(!flag)
+        //         logDebug(r->connection->log, 0, "Skipping request cookie outside of our zone: %s", cookie_name);
+        // } else {
+            logDebug(request, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
+            json_object_object_add(json_cookies, "name", json_object_new_string((const char*) cookie_name));
+            json_object_object_add(json_cookies, "value", json_object_new_string((const char*) cookie_value));
+            json_object_array_add(jsonGatewayRequestCookies, json_cookies); 
+        // }
+    }
+    json_object_object_add(jsonGatewayRequest, "cookies", jsonGatewayRequestCookies);
+
     // // parameters
 
     // // attributes
@@ -453,6 +498,71 @@ ssorest_array_t* getLocales(SSORestRequestObject* r)
         start = pos;
     }
     return langs_array;
+}
+
+const char* getCookies(SSORestRequestObject* r)
+{
+    #ifdef APACHE
+        return apr_table_get(r->headers_in, "Cookie");
+    #elif NGINX
+        size_t len;
+        u_char *p, *end;
+        u_char sep = ';';
+        ngx_uint_t i, n;
+        ngx_array_t *a;
+        ngx_table_elt_t **h;
+        uintptr_t data = offsetof(ngx_http_request_t, headers_in.cookies);
+
+        a = (ngx_array_t *) ((char *) r + data);
+
+        n = a->nelts;
+        h = a->elts;
+
+        len = 0;
+
+        for (i = 0; i < n; i++) {
+
+            if (h[i]->hash == 0) {
+                continue;
+            }
+
+            len += h[i]->value.len + 2;
+        }
+
+        if (len == 0) {
+            return NULL;
+        }
+
+        len -= 2;
+
+        if (n == 1) {
+            return toStringSafety(r->pool, (*h)->value.data, (*h)->value.len);
+        }
+
+        p = ngx_pnalloc(r->pool, len);
+        if (p == NULL) {
+            return NULL;
+        }
+
+        end = p + len;
+
+        for (i = 0; /* void */; i++) {
+
+            if (h[i]->hash == 0) {
+                continue;
+            }
+
+            p = ngx_copy(p, h[i]->value.data, h[i]->value.len);
+
+            if (p == end) {
+                break;
+            }
+
+            *p++ = sep;
+            *p++ = ' ';
+        }
+        return toStringSafety(r->pool, p, len);
+    #endif
 }
 const char* getAcceptLanguage(SSORestRequestObject* r)
 {

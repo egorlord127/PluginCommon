@@ -12,7 +12,12 @@ char* processRequest(SSORestRequestObject* request, SSORestPlugin* plugin)
     // setJsonGatewayRequestAttributes(&jsonGatewayRequest, "acoName", plugin->pluginConfiguration->acoName);
     // setJsonGatewayRequestAttributes(&jsonGatewayRequest, "pluginId", plugin->pluginConfiguration->pluginId);
     // setJsonGatewayRequestAttributes(&jsonGatewayRequest, "gatewayToken", plugin->pluginConfiguration->gatewayToken);
-    jsonGatewayRequest = buildJsonGatewayRequest(request);
+    
+    // testcode for now
+    ssorest_array_t *ssoZone;
+    ssoZone = NULL;
+    int sendFormParameters = 1;
+    jsonGatewayRequest = buildJsonGatewayRequest(request, ssoZone, sendFormParameters);
     if (jsonGatewayRequest == NULL)
         return "Null";
     // return "Not Null";
