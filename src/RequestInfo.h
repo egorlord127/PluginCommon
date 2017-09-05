@@ -28,3 +28,4 @@ const char*         getHost(SSORestRequestObject*);
 const char*         getAcceptEncoding(SSORestRequestObject*);
 const char*         getUserAgent(SSORestRequestObject*);
 int                 isDefaultPort(int port);
+const char*         getRequestFileExtension(SSORestRequestObject*);

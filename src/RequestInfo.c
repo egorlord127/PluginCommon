@@ -465,4 +465,15 @@ const char* getRequestArgs(SSORestRequestObject* r)
     return rv;
 }
 
-
+const char* getRequestFileExtension(SSORestRequestObject* r)
+{
+    #ifdef APACHE
+        const char *dot = strrchr(r->uri, '.');
+        if(!dot || dot == r->uri) return "";
+        return dot + 1;
+    #elif NGINX
+        ngx_str_t *s = (ngx_str_t *) ((char *) r + offsetof(ngx_http_request_t, exten));
+        char *rv = s->data? toStringSafety(r->pool, s->data, s->len) : "";
+        return rv;
+    #endif
+}

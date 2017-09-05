@@ -1,6 +1,7 @@
 #include "SSORestPlugin.h"
 #include "JsonGatewayRequest.h"
 #include "JsonGatewayResponse.h"
+#include "RequestInfo.h"
 
 SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
 {
@@ -35,6 +36,7 @@ int processRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf)
         logError(r, "SSO/Rest Plugin is disabled");
         return SSOREST_DECLINED;
     }
+
     JSonGatewayRequest  *jsonGatewayRequest;
     JSonGatewayResponse *jsonGatewayResponse = NULL;
     jsonGatewayRequest = buildJsonGatewayRequest(r, conf);
