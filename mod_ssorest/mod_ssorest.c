@@ -119,6 +119,9 @@ static const char *setSSORestSSOZone(cmd_parms *parms, void *cfg, const char *ar
 static const char *setSSORestIgnoreExt(cmd_parms *parms, void *cfg, const char *arg)
 {
     SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
+    if (arg[0] != '.' || strlen(arg) < 2) 
+        return "SSORestIgnoreExt should be start with '.'";
+    arg++;
     *(const char**)apr_array_push(conf->ignoreExt) = arg;
     return NULL;
 }

@@ -261,10 +261,14 @@ static char *setSSORestIgnoreExt(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
 
     value = cf->args->elts;
     for (i = 1; i < cf->args->nelts; i++) {
+        if (value[i].data[0] != '.' || value[i].len < 2) 
+            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "SSORestIgnoreExt should be start with '.'");
+
         ignore = ngx_array_push(conf->ignoreExt);
         if (ignore == NULL)
             return NGX_CONF_ERROR ;
-        *ignore = value[i];
+        ignore->len = value[i].len - 1;
+        ignore->data = value[i].data + 1;
     }
     return NGX_CONF_OK;
 }
@@ -317,7 +321,5 @@ static ngx_int_t ngx_ssorest_plugin_init(ngx_conf_t *cf)
 static ngx_int_t ngx_ssorest_plugin_request_handler(ngx_http_request_t *r)
 {
     SSORestPluginConfigration *conf = ngx_http_get_module_srv_conf(r, ngx_ssorest_plugin_module);
-    processRequest(r, conf);
-    // ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0, "testcode:%s", temp);
-    return NGX_OK;
+    return processRequest(r, conf);
 }

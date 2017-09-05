@@ -467,13 +467,15 @@ const char* getRequestArgs(SSORestRequestObject* r)
 
 const char* getRequestFileExtension(SSORestRequestObject* r)
 {
+    const char *dot;
+    const char *uri;
     #ifdef APACHE
-        const char *dot = strrchr(r->uri, '.');
-        if(!dot || dot == r->uri) return "";
-        return dot + 1;
+        uri = r->uri;
     #elif NGINX
-        ngx_str_t *s = (ngx_str_t *) ((char *) r + offsetof(ngx_http_request_t, exten));
-        char *rv = s->data? toStringSafety(r->pool, s->data, s->len) : "";
-        return rv;
+        uri = r->uri.data? toStringSafety(r->pool, r->uri.data, r->uri.len) : "";
     #endif
+    
+    dot = strrchr(uri, '.');
+    if(!dot || dot == uri) return "";
+    return dot + 1;
 }

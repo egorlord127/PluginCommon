@@ -36,6 +36,23 @@ int processRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf)
         logError(r, "SSO/Rest Plugin is disabled");
         return SSOREST_DECLINED;
     }
+    logError(r, "Processing new request:%s", getUrl(r));
+    
+    /* 1.Check if the request uri matches with ignored extension */
+    const char *requestExt = getRequestFileExtension(r);
+    UINT i;
+    for (i = 0; i < conf->ignoreExt->nelts; i++ )
+    {
+        #ifdef APACHE
+            const char *s = ((const char**)conf->ignoreExt->elts)[i];
+        #elif NGINX
+            const char *s = (const char *) ((ngx_str_t *)conf->ignoreExt->elts)[i].data;
+        #endif
+        if (strcmp(s, requestExt) == 0) {
+            logError(r, "Ignore Extension Matched");
+            return SSOREST_DECLINED;
+        }
+    }
 
     JSonGatewayRequest  *jsonGatewayRequest;
     JSonGatewayResponse *jsonGatewayResponse = NULL;
