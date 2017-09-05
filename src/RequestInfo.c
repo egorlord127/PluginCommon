@@ -479,3 +479,14 @@ const char* getRequestFileExtension(SSORestRequestObject* r)
     if(!dot || dot == uri) return "";
     return dot + 1;
 }
+
+const char* getUri(SSORestRequestObject* r)
+{
+    const char *rv = "";
+    #ifdef APACHE
+        rv = r->uri? r->uri : "";
+    #elif NGINX
+        rv = r->uri.data? toStringSafety(r->pool, r->uri.data, r->uri.len) : "";
+    #endif
+    return rv;
+}

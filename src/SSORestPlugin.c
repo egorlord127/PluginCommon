@@ -54,6 +54,21 @@ int processRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf)
         }
     }
 
+    /* 2.Check if the request uri matches with ignored url */
+    const char *uri = getUri(r);
+    for (i = 0; i < conf->ignoreUrl->nelts; i++ )
+    {
+        #ifdef APACHE
+            const char *ignoreuri = ((const char**)conf->ignoreUrl->elts)[i];
+        #elif NGINX
+            const char *ignoreuri = (const char *) ((ngx_str_t *)conf->ignoreUrl->elts)[i].data;
+        #endif
+        if (strstr(uri, ignoreuri)) {
+            logError(r, "Ignore Url Matched");
+            return SSOREST_DECLINED;
+        }
+    }
+
     JSonGatewayRequest  *jsonGatewayRequest;
     JSonGatewayResponse *jsonGatewayResponse = NULL;
     jsonGatewayRequest = buildJsonGatewayRequest(r, conf);
