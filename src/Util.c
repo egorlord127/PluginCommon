@@ -211,3 +211,14 @@ int unescape_str(char *s, char *dec)
 
     return o - dec;
 }
+
+void generateSecureRandomString(char *s, const int length)
+{
+    const char alphanum[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    int i;
+    for (i = 0; i < length; ++i) {
+        s[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
+    }
+
+    s[length] = '\0';
+}

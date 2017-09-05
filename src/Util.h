@@ -5,3 +5,4 @@ void    generateSecureRandomString(char *s, const int length);
 char   *ssorest_pstrcat(SSORestPluginPool *a, ...);
 char   *toStringSafety(SSORestPluginPool *pool, unsigned char *str, int len);
 int     unescape_str(char *s, char *dec);
+void    generateSecureRandomString(char *s, const int length);
