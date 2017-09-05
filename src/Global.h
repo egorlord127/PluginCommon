@@ -1,7 +1,4 @@
 #pragma once
-
-
-#include <json-c/json.h>
 #ifdef APACHE
     #include <httpd.h>
     #include <http_request.h>
@@ -53,8 +50,3 @@
     #define logInfo(r,   ...) 	ngx_log_error_core(NGX_LOG_INFO,    r->connection->log, 0, __VA_ARGS__)
     #define logDebug(r,  ...) 	ngx_log_error_core(NGX_LOG_DEBUG,   r->connection->log, 0, __VA_ARGS__)
 #endif
-
-
-typedef struct SSORestPlugin SSORestPlugin;
-typedef struct SSORestPluginConfigration SSORestPluginConfigration;
-typedef json_object JSonGatewayRequest;

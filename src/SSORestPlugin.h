@@ -1,12 +1,8 @@
 #pragma once
 #include "Global.h"
+#include <json-c/json.h>
 
-struct SSORestPlugin
-{
-    SSORestPluginConfigration* pluginConfiguration;
-};
-
-struct SSORestPluginConfigration
+typedef struct 
 {
     int isEnabled;
     int isTraceEnabled;
@@ -21,7 +17,16 @@ struct SSORestPluginConfigration
     ssorest_array_t *ssoZone;
     ssorest_array_t *ignoreExt;
     ssorest_array_t *ignoreUrl;
-};
+} SSORestPluginConfigration;
 
-void createPluginConfiguration(SSORestPlugin*, SSORestPluginPool*);
-char* processRequest(SSORestRequestObject* request, SSORestPlugin* plugin);
+typedef struct 
+{
+    SSORestPluginConfigration* pluginConfiguration;
+} SSORestPlugin;
+
+
+
+SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool*);
+char* processRequest(SSORestRequestObject* request, SSORestPluginConfigration* plugin);
+
+typedef json_object JSonGatewayRequest;

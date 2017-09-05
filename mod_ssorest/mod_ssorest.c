@@ -1,12 +1,5 @@
-#include <httpd.h>
-#include <http_request.h>
-#include <http_log.h>
-#include <http_protocol.h>
-#include <http_core.h>
-#include <http_config.h>
-
+#include "Global.h"
 #include "SSORestPlugin.h"
-#include <apr_tables.h>
 static SSORestPlugin ssorest;
 
 static const char *setSSORestEnable(cmd_parms *cmd, void *cfg, const char* arg);

@@ -1,8 +1,7 @@
 #pragma once
 
-#include <json-c/json.h>
 #include "Global.h"
-
+#include "SSORestPlugin.h"
 JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject*, SSORestPluginConfigration*);
 void sendJsonGatewayRequest(const char*);
 void setJsonGatewayRequestAttributes(JSonGatewayRequest* , const char*, const char*);
