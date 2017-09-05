@@ -113,16 +113,6 @@ int base64_decode(const unsigned char *in, unsigned char *out, unsigned int in_l
     return length;
 }
 
-void generateSecureRandomString(char *s, const int length)
-{
-    int i;
-    for (i = 0; i < length; ++i) {
-        s[i] = base64_chars[rand() % (sizeof(base64_chars) - 1)];
-    }
-
-    s[length] = '\0';
-}
-
 char * ssorest_pstrcat(SSORestPluginPool *a, ...)
 {
 	char *cp, *argp, *res;
