@@ -13,4 +13,4 @@ struct JSonGatewayResponse{
     int status;
 };
 
-int parseJsonGatewayResponse(SSORestRequestObject*, SSORestPluginConfigration*, const char*, JSonGatewayResponse*);
+int parseJsonGatewayResponse(SSORestRequestObject*, SSORestPluginConfigration*, const char*, JSonGatewayResponse**);

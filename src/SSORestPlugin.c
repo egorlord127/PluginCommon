@@ -28,13 +28,15 @@ SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
     conf->cf_pool = pool;
     return conf;
 }
-char* processRequest(SSORestRequestObject* request, SSORestPluginConfigration* conf)
+char* processRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf)
 {
     JSonGatewayRequest  *jsonGatewayRequest;
     JSonGatewayResponse *jsonGatewayResponse = NULL;
-    jsonGatewayRequest = buildJsonGatewayRequest(request, conf);
-    parseJsonGatewayResponse(request, conf, sendJsonGatewayRequest(request, conf, jsonGatewayRequest), jsonGatewayResponse);
+    jsonGatewayRequest = buildJsonGatewayRequest(r, conf);
+    parseJsonGatewayResponse(r, conf, sendJsonGatewayRequest(r, conf, jsonGatewayRequest), &jsonGatewayResponse);
+    
 
+    logError(r, "Gateway provided response status = %d", jsonGatewayResponse->status);
     return "OK";
     // if (jsonGatewayRequest == NULL)
     //     return "Null";
