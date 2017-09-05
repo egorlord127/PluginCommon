@@ -29,6 +29,6 @@ typedef struct
 
 
 SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool*);
-char* processRequest(SSORestRequestObject* request, SSORestPluginConfigration* plugin);
+int processRequest(SSORestRequestObject* request, SSORestPluginConfigration* plugin);
 
 typedef json_object JSonGatewayRequest;

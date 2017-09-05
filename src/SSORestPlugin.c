@@ -28,13 +28,18 @@ SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
     conf->cf_pool = pool;
     return conf;
 }
-char* processRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf)
+int processRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf)
 {
+    if ( conf->isEnabled == 0) 
+    {
+        logError(r, "SSO/Rest Plugin is disabled");
+        return SSOREST_DECLINED;
+    }
     JSonGatewayRequest  *jsonGatewayRequest;
     JSonGatewayResponse *jsonGatewayResponse = NULL;
     jsonGatewayRequest = buildJsonGatewayRequest(r, conf);
     if (parseJsonGatewayResponse(r, conf, sendJsonGatewayRequest(r, conf, jsonGatewayRequest), &jsonGatewayResponse) == SSOREST_ERROR)
-        return "Error";
+        return SSOREST_OK;
 
     logError(r, "Gateway provided response status = %d", jsonGatewayResponse->status);
     if (jsonGatewayResponse->status == SC_NOT_EXTENDED)
@@ -53,5 +58,5 @@ char* processRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf)
         }
 
     }
-    return "OK";
+    return SSOREST_OK;
 }

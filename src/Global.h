@@ -10,14 +10,12 @@
     typedef apr_array_header_t ssorest_array_t;
     typedef apr_table_t ssorest_table_t;
     typedef unsigned int UINT;
+    #define SSOREST_DECLINED (DECLINED)
+    #define SSOREST_OK (OK)
     #define ssorest_pcalloc(pool, size) (apr_pcalloc(pool, size))
     #define ssorest_palloc(pool, size) (apr_palloc(pool, size))
     #define ssorest_array_create(pool, nelts, elt_size) (apr_array_make(pool, nelts, elt_size))
     #define ssorest_array_push(arr) (apr_array_push(arr))
-    typedef struct ssorest_str_t {
-        unsigned char *data;
-        int len;
-    } ssorest_str_t;
     #define logEmerg(r,  ...) 	ap_log_error(APLOG_MARK, APLOG_EMERG,   0,  r->server, __VA_ARGS__)
     #define logAlert(r,  ...) 	ap_log_error(APLOG_MARK, APLOG_ALERT,   0,  r->server, __VA_ARGS__)
     #define logCrit(r,   ...) 	ap_log_error(APLOG_MARK, APLOG_CRIT,    0,  r->server, __VA_ARGS__)
@@ -36,7 +34,8 @@
     typedef ngx_array_t ssorest_array_t;
     typedef ngx_table_elt_t ssorest_table_t;
     typedef ngx_uint_t UINT;
-    typedef ngx_str_t ssorest_str_t;
+    #define SSOREST_DECLINED (NGX_DECLINED)
+    #define SSOREST_OK (NGX_OK)
     #define ssorest_pcalloc(pool, size) (ngx_pcalloc(pool, size))
     #define ssorest_palloc(pool, size) (ngx_palloc(pool, size))
     #define ssorest_array_create(pool, nelts, elt_size)     (ngx_array_create(pool, nelts, elt_size))
@@ -51,6 +50,5 @@
     #define logDebug(r,  ...) 	ngx_log_error_core(NGX_LOG_DEBUG,   r->connection->log, 0, __VA_ARGS__)
 #endif
 
-#define SSOREST_OK       0
-#define SSOREST_ERROR    1
+#define SSOREST_ERROR    (SSOREST_DECLINED)
 #define SC_NOT_EXTENDED  510

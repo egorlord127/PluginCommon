@@ -132,9 +132,8 @@ static const char *setSSORestIgnoreUrl(cmd_parms *parms, void *cfg, const char *
 static int process(request_rec *r)
 {
     SSORestPluginConfigration *conf = ap_get_module_config(r->server->module_config, &ssorest_module);
-    char *temp = processRequest(r, conf);
-    ap_log_error(APLOG_MARK, APLOG_CRIT, 0, r->server, APLOGNO(10006)
-                "testcode:%s", temp);
+    processRequest(r, conf);
+    
     return OK;
 }
 
