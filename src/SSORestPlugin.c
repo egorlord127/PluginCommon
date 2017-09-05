@@ -15,7 +15,10 @@ char* processRequest(SSORestRequestObject* request, SSORestPlugin* plugin)
     
     // testcode for now
     ssorest_array_t *ssoZone;
-    ssoZone = NULL;
+    ssoZone = ssorest_array_create(request->pool, 1, sizeof(ssorest_str_t));
+    ssorest_str_t *value = ssorest_array_push(ssoZone);
+    value->len = 2;
+    value->data = (u_char *) "SM";
     int sendFormParameters = 1;
     jsonGatewayRequest = buildJsonGatewayRequest(request, ssoZone, sendFormParameters);
     if (jsonGatewayRequest == NULL)

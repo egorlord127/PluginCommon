@@ -15,6 +15,12 @@
     typedef unsigned int UINT;
     #define ssorest_pcalloc(pool, size) (apr_pcalloc(pool, size))
     #define ssorest_palloc(pool, size) (apr_palloc(pool, size))
+    #define ssorest_array_create(pool, nelts, elt_size) (apr_array_make(pool, nelts, elt_size))
+    #define ssorest_array_push(arr) (apr_array_push(arr))
+    typedef struct ssorest_str_t {
+        unsigned char *data;
+        int len;
+    } ssorest_str_t;
     #define logEmerg(r,  ...) 	ap_log_error(APLOG_MARK, APLOG_EMERG,   0,  r->server, __VA_ARGS__)
     #define logAlert(r,  ...) 	ap_log_error(APLOG_MARK, APLOG_ALERT,   0,  r->server, __VA_ARGS__)
     #define logCrit(r,   ...) 	ap_log_error(APLOG_MARK, APLOG_CRIT,    0,  r->server, __VA_ARGS__)
@@ -35,6 +41,8 @@
     typedef ngx_uint_t UINT;
     #define ssorest_pcalloc(pool, size) (ngx_pcalloc(pool, size))
     #define ssorest_palloc(pool, size) (ngx_palloc(pool, size))
+    #define ssorest_array_create(pool, nelts, elt_size)     (ngx_array_create(pool, nelts, elt_size))
+    #define ssorest_array_push(arr) (ngx_array_push(arr))
     #define logEmerg(r,  ...) 	ngx_log_error_core(NGX_LOG_EMERG,   r->connection->log, 0, __VA_ARGS__)
     #define logAlert(r,  ...) 	ngx_log_error_core(NGX_LOG_ALERT,   r->connection->log, 0, __VA_ARGS__)
     #define logCrit(r,   ...) 	ngx_log_error_core(NGX_LOG_CRIT,    r->connection->log, 0, __VA_ARGS__)

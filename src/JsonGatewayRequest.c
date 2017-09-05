@@ -152,35 +152,36 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , ssor
         cookie_value = ssorest_pcalloc(request->pool, strlen(cookie));
         sscanf(cookie, "%[^=]=%s", cookie_name, cookie_value);
 
-        // if(ssoZone)
-        // {
-        //     size_t size;
-        //     ngx_uint_t i;
-        //     ngx_uint_t flag = 0;
-        //     ngx_str_t *ssozone;
-
-        //     size = ssoZone->nelts;
-        //     ssozone = ssoZone->elts;
-
-        //     for(i = 0; i < size; i++)
-        //     {
-        //         if (!strncasecmp((char *) cookie_name, (char *) ssozone[i].data, ssozone[i].len)) {
-        //             logDebug(r->connection->log, 0, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
-        //             json_object_object_add(json_cookies, "name", json_object_new_string((const char*) cookie_name));
-        //             json_object_object_add(json_cookies, "value", json_object_new_string((const char*) cookie_value));
-        //             json_object_array_add(json, json_cookies);
-        //             flag = 1;
-        //             break;
-        //         }
-        //     }
-        //     if(!flag)
-        //         logDebug(r->connection->log, 0, "Skipping request cookie outside of our zone: %s", cookie_name);
-        // } else {
-            logDebug(request, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
+        if(ssoZone)
+        {
+            UINT i;
+            UINT flag = 0;
+            for(i = 0; i < ssoZone->nelts; i++)
+            {
+                #ifdef APACHE
+                    const char *ssozone = ((const char**)ssoZone->elts)[i];
+                    UINT ssozone_len = strlen(ssozone);
+                #elif NGINX
+                    const char *ssozone = (const char *) (((ngx_str_t *)ssoZone->elts)[i].data);
+                    UINT ssozone_len = ((ngx_str_t *)ssoZone->elts)[i].len;
+                #endif
+                if (!strncasecmp((char *) cookie_name, ssozone, ssozone_len)) {
+                    logError(request, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
+                    json_object_object_add(json_cookies, "name", json_object_new_string((const char*) cookie_name));
+                    json_object_object_add(json_cookies, "value", json_object_new_string((const char*) cookie_value));
+                    json_object_array_add(jsonGatewayRequestCookies, json_cookies);
+                    flag = 1;
+                    break;
+                }
+            }
+            if(!flag)
+                logError(request, "Skipping request cookie outside of our zone: %s", cookie_name);
+        } else {
+            logError(request, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
             json_object_object_add(json_cookies, "name", json_object_new_string((const char*) cookie_name));
             json_object_object_add(json_cookies, "value", json_object_new_string((const char*) cookie_value));
             json_object_array_add(jsonGatewayRequestCookies, json_cookies); 
-        // }
+        }
     }
     json_object_object_add(jsonGatewayRequest, "cookies", jsonGatewayRequestCookies);
 
