@@ -3,18 +3,19 @@ ngx_module_name=ngx_ssorest_plugin_module
 ngx_module_incs="$ngx_addon_dir../src"
 ngx_module_deps="\
 	$ngx_addon_dir/../src/Global.h\
+    $ngx_addon_dir/../src/Util.h\
+    $ngx_addon_dir/../src/CurlWrapper.h\
 	$ngx_addon_dir/../src/JsonGatewayRequest.h\
     $ngx_addon_dir/../src/JsonGatewayResponse.h\
     $ngx_addon_dir/../src/SSORestPlugin.h\
-    $ngx_addon_dir/../src/Util.h\
 "
 ngx_module_srcs="\
+    $ngx_addon_dir/../src/Util.c\
+    $ngx_addon_dir/../src/CurlWrapper.c\
 	$ngx_addon_dir/../src/JsonGatewayRequest.c\
     $ngx_addon_dir/../src/JsonGatewayResponse.c\
     $ngx_addon_dir/../src/SSORestPlugin.c\
-    $ngx_addon_dir/../src/Util.c\
     $ngx_addon_dir/ngx_ssorest.c\
-    
 "
 ngx_module_libs="-lcurl -ljson-c -lcrypto"
 ngx_module_order=

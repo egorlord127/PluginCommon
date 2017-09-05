@@ -1,6 +1,8 @@
 #pragma once
 #include <json-c/json.h>
 #include "Global.h"
+
+
 typedef struct JSonGatewayResponse JSonGatewayResponse;
 struct JSonGatewayResponse{
     json_object *json;

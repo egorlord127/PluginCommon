@@ -1,7 +1,11 @@
 #include "Global.h"
 #include "JsonGatewayRequest.h"
+#include "JsonGatewayResponse.h"
+#include "CurlWrapper.h"
 #include "SSORestPlugin.h"
 #include "Util.h"
+
+static CURL* get_curl_session(SSORestRequestObject* r, SSORestPluginConfigration* conf);
 
 #ifdef NGINX
 static void ssorest_json_cleanup(void *data)
@@ -279,9 +283,43 @@ void setJsonGatewayRequestAttributes(JSonGatewayRequest* self, const char* key, 
     
 }
 
-void sendJsonGatewayRequest(const char* gatewayUrl)
+
+/**
+ * sendJsonGatewayRequest:
+ * @self:       The pointer to json request object.
+ * @gatewayUrl: The endpoint of SSO/Rest Gateway
+ *
+ * Send the json request ot specified g/w.
+ */
+void sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest* jsonRequest)
 {
+	CURLcode curl_result_code;
+	// long curl_http_code = 0;
+	CurlContextRec *curl_context_rec = ssorest_pcalloc(r->pool, sizeof(*curl_context_rec));
+	curl_context_rec->pool = r->pool;
+    CURL *curl = get_curl_session(r, conf);
+
+    curl_easy_setopt(curl, CURLOPT_URL, conf->gatewayUrl);
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_object_to_json_string(jsonRequest));
+
+    // Add Debugging Options
+    if(conf->isTraceEnabled)
+    {
+        // curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, trace_libcurl);
+        // curl_easy_setopt(curl, CURLOPT_DEBUGDATA, r);
+        // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);        
+    }
+
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlRecvData);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, curl_context_rec);
     
+    curl_result_code = curl_easy_perform(curl);
+    if (curl_result_code != CURLE_OK)
+    {
+        logError(r, "Failed to fetch url (%s) - curl reported: %s", conf->gatewayUrl, curl_easy_strerror(curl_result_code));
+    }
+    logError(r, "Received raw gateway response, length=%s", curl_context_rec->response_data);
 }
 
 const char* getMethod(SSORestRequestObject* r)
@@ -747,4 +785,43 @@ const char* getRequestArgs(SSORestRequestObject* r)
     #endif
 
     return rv;
+}
+
+static CURL* get_curl_session(SSORestRequestObject* r, SSORestPluginConfigration* conf)
+{
+	if ( conf->curl_session ) {
+
+	} else {
+		conf->curl_session = curl_easy_init();
+		if ( conf->curl_session ) {
+            #ifdef APACHE
+			    apr_pool_cleanup_register(conf->cf_pool, conf->curl_session, (void *)curl_easy_cleanup, apr_pool_cleanup_null);
+            #elif NGINX
+
+            #endif
+
+            curl_easy_setopt(conf->curl_session, CURLOPT_TIMEOUT, 30);
+            curl_easy_setopt(conf->curl_session, CURLOPT_FOLLOWLOCATION, 1);
+            curl_easy_setopt(conf->curl_session, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_easy_setopt(conf->curl_session, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+
+            struct curl_slist *headers = NULL;
+            headers = curl_slist_append(headers, "Accept: application/json");
+            headers = curl_slist_append(headers, "Content-Type: application/json");
+
+			if ( headers ) {
+                #ifdef APACHE
+				    apr_pool_cleanup_register(r->server->process->pool, headers, (void *) curl_slist_free_all, apr_pool_cleanup_null);
+                #elif NGINX
+
+                #endif
+
+                curl_easy_setopt(conf->curl_session, CURLOPT_HTTPHEADER, headers);
+			}
+		}
+	}
+	if ( conf->curl_session == NULL ) {
+		// TODO: Error Handling
+	}
+	return conf->curl_session;
 }

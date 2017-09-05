@@ -4,7 +4,7 @@ INCLUDES= \
 	-I../src \
 
 
-LIBS=-ljson-c
+LIBS=-ljson-c -lcurl
 
 SOURCES= \
     mod_ssorest.c \
@@ -12,6 +12,7 @@ SOURCES= \
 	../src/JsonGatewayRequest.c \
 	../src/JsonGatewayResponse.c \
 	../src/Util.c \
+	../src/CurlWrapper.c \
 
 main:
 	apxs $(INCLUDES) $(DEFS) -c $(SOURCES) $(LIBS)
