@@ -20,6 +20,7 @@ const char*         getLocalName(SSORestRequestObject*);
 int                 getLocalPort(SSORestRequestObject*);
 const char*         getRemoteAddr(SSORestRequestObject*);
 const char*         getRemoteHost(SSORestRequestObject*);
+const char*         getRequestArgs(SSORestRequestObject*);
 int                 getRemotePort(SSORestRequestObject*);
 int                 getSecure(SSORestRequestObject*);
 const char*         getScheme(SSORestRequestObject*);

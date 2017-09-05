@@ -531,7 +531,7 @@ const char* getCookies(SSORestRequestObject* r)
         }
 
         if (len == 0) {
-            return NULL;
+            return "";
         }
 
         len -= 2;
@@ -542,7 +542,7 @@ const char* getCookies(SSORestRequestObject* r)
 
         p = ngx_pnalloc(r->pool, len);
         if (p == NULL) {
-            return NULL;
+            return "";
         }
 
         end = p + len;
@@ -653,3 +653,15 @@ int isDefaultPort(int port)
     return (port == 80);
 }
 
+const char* getRequestArgs(SSORestRequestObject*)
+{
+    const char *rv = "";
+    #ifdef APACHE
+        rv = r->args;
+    #elif NGINX
+        ngx_str_t *s = (ngx_str_t *) ((char *) r + offsetof(ngx_http_request_t, args));
+        rv = s->data? toStringSafety(r->pool, s->data, s->len) : "";
+    #endif
+
+    return rv;
+}
