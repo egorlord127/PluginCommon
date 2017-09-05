@@ -148,7 +148,7 @@ char * ssorest_pstrcat(SSORestPluginPool *a, ...)
 
 	/* Allocate the required string */
 
-	res = (char *) ngx_pcalloc(a, len + 1);
+	res = (char *) ssorest_pcalloc(a, len + 1);
 	cp = res;
 
 	/* Pass two --- copy the argument strings into the result space */
@@ -172,13 +172,42 @@ char * ssorest_pstrcat(SSORestPluginPool *a, ...)
 	return res;
 }
 
-char *toStringSafety(ngx_pool_t *pool, u_char *str, int len)
+char *toStringSafety(SSORestPluginPool *pool, unsigned char *str, int len)
 {
     if (str == NULL) {
         return "";
     }
-    char *dst = ngx_pnalloc(pool, len + 1);
+    char *dst = ssorest_pcalloc(pool, len + 1);
     strncpy(dst, (const char *) (str), len);
     dst[len] = '\0';
     return dst;
+}
+
+inline int ishex(int x)
+{
+    return (x >= '0' && x <= '9') ||
+            (x >= 'a' && x <= 'f') ||
+            (x >= 'A' && x <= 'F');
+}
+
+int unescape_str(char *s, char *dec)
+{
+    char *o;
+    const char *end = s + strlen(s);
+    int c;
+
+    for (o = dec; s <= end; o++) {
+        c = *s++;
+        if (c == '+')
+            c = ' ';
+        else if (c == '%' && (!ishex(*s++) ||
+                !ishex(*s++) ||
+                !sscanf(s - 2, "%2x", &c)))
+            return -1;
+
+        if (dec)
+            *o = c;
+    }
+
+    return o - dec;
 }

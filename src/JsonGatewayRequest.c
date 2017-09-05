@@ -185,9 +185,78 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , ssor
     }
     json_object_object_add(jsonGatewayRequest, "cookies", jsonGatewayRequestCookies);
 
-    // // parameters
+    // parameters
+    if (sendFormParameters)
+    {
+        json_object *jsonGatewayRequestParameters = json_object_new_object();
+        json_object *json_temp = NULL;
+        json_object *jsonarray_value;
+        
+        char *pair = NULL;
+        char *saved = NULL;
+        char *key = NULL;
+        char *value = NULL;
+        char *inner_args = NULL;
+        char *inner_pair = NULL;
+        char *inner_saved = NULL;
+        char *inner_key = NULL;
+        char *inner_value = NULL;
+        
+        char *args = (char *) getRequestArgs(request);
+    
+        for (pair = strtok_r(args, "&", &saved); pair; pair = strtok_r(NULL, "&", &saved)) {
+            jsonarray_value = json_object_new_array();
+            key = ssorest_pcalloc(request->pool, strlen(pair));
+            value = ssorest_pcalloc(request->pool, strlen(pair));
+            if (key == NULL || value == NULL)
+            {
+                logError(request, "Could not Allocate Memory");
+            }
+            sscanf(pair, "%[^=]=%s", key, value);
+            json_object_object_get_ex(jsonGatewayRequestParameters, key, &json_temp);
+            if (json_temp != NULL) {
+                continue;
+            }
+    
+            // Unescape querystring Value
+            char *unesc_str = ssorest_pcalloc(request->pool, strlen(value) + 1);
+            if (unesc_str == NULL)
+            {
+                logError(request, "Could not Allocate Memory");
+            }
+            unescape_str(value, unesc_str);
+            json_object_array_add(jsonarray_value, json_object_new_string(unesc_str));
+    
+            inner_args = ssorest_pcalloc(request->pool, strlen(saved) + 1);
+            memcpy(inner_args, saved, strlen(saved));
+            inner_args[strlen(saved)] = '\0';
+    
+            for (inner_pair = strtok_r(inner_args, "&", &inner_saved); inner_pair;
+                    inner_pair = strtok_r(NULL, "&", &inner_saved))
+                            {
+                inner_key = ssorest_pcalloc(request->pool, strlen(inner_pair));
+                inner_value = ssorest_pcalloc(request->pool, strlen(inner_pair));
+                sscanf(inner_pair, "%[^=]=%s", inner_key, inner_value);
+    
+                if (strcmp(key, inner_key) == 0)
+                        {
+                    // Unescape querystring Value
+                    char *unesc_str = ssorest_pcalloc(request->pool, strlen(inner_value) + 1);
+                    if (unesc_str == NULL)
+                    {
+                        logError(request, "Could not Allocate Memory");
+                    }
+                    unescape_str(inner_value, unesc_str);
+                    json_object_array_add(jsonarray_value, json_object_new_string(unesc_str));
+                }
+            }
+            json_object_object_add(jsonGatewayRequestParameters, key, jsonarray_value);
+        }
+        json_object_object_add(jsonGatewayRequest, "parameters", jsonGatewayRequestParameters);
+    }
+    
 
-    // // attributes
+    // attributes
     return jsonGatewayRequest;
 }
 
@@ -653,11 +722,11 @@ int isDefaultPort(int port)
     return (port == 80);
 }
 
-const char* getRequestArgs(SSORestRequestObject*)
+const char* getRequestArgs(SSORestRequestObject* r)
 {
     const char *rv = "";
     #ifdef APACHE
-        rv = r->args;
+        rv = r->args? r->args : "";
     #elif NGINX
         ngx_str_t *s = (ngx_str_t *) ((char *) r + offsetof(ngx_http_request_t, args));
         rv = s->data? toStringSafety(r->pool, s->data, s->len) : "";

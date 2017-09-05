@@ -39,6 +39,7 @@
     typedef ngx_array_t ssorest_array_t;
     typedef ngx_table_elt_t ssorest_table_t;
     typedef ngx_uint_t UINT;
+    typedef ngx_str_t ssorest_str_t;
     #define ssorest_pcalloc(pool, size) (ngx_pcalloc(pool, size))
     #define ssorest_palloc(pool, size) (ngx_palloc(pool, size))
     #define ssorest_array_create(pool, nelts, elt_size)     (ngx_array_create(pool, nelts, elt_size))

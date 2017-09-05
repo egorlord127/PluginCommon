@@ -11,6 +11,7 @@ SOURCES= \
     ../src/SSORestPlugin.c \
 	../src/JsonGatewayRequest.c \
 	../src/JsonGatewayResponse.c \
+	../src/Util.c \
 
 main:
 	apxs $(INCLUDES) $(DEFS) -c $(SOURCES) $(LIBS)
