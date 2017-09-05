@@ -1,7 +1,7 @@
 #pragma once
 #include <json-c/json.h>
 #include "Global.h"
-
+#include "SSORestPlugin.h"
 
 typedef struct JSonGatewayResponse JSonGatewayResponse;
 struct JSonGatewayResponse{
@@ -13,4 +13,4 @@ struct JSonGatewayResponse{
     int status;
 };
 
-void parseJsonGatewayResponse(const char*, JSonGatewayResponse*);
+int parseJsonGatewayResponse(SSORestRequestObject*, SSORestPluginConfigration*, const char*, JSonGatewayResponse*);

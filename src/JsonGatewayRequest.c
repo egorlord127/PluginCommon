@@ -1,6 +1,5 @@
 #include "Global.h"
 #include "JsonGatewayRequest.h"
-#include "JsonGatewayResponse.h"
 #include "CurlWrapper.h"
 #include "SSORestPlugin.h"
 #include "Util.h"
@@ -293,12 +292,16 @@ void setJsonGatewayRequestAttributes(JSonGatewayRequest* self, const char* key, 
 
 /**
  * sendJsonGatewayRequest:
- * @self:       The pointer to json request object.
- * @gatewayUrl: The endpoint of SSO/Rest Gateway
+ * @r:           The pointer to request object.
+ * @conf:        The pointer to plugin configuration.
+ * @jsonRequest: The pointer to Json Reqeust object
  *
  * Send the json request ot specified g/w.
+ *
+ * Return string if curl is successfully done.
+ * Return Null if it fails.
  */
-void sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest* jsonRequest)
+char* sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest* jsonRequest)
 {
 	CURLcode curl_result_code;
 	// long curl_http_code = 0;
@@ -324,8 +327,11 @@ void sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration* 
     if (curl_result_code != CURLE_OK)
     {
         logError(r, "Failed to fetch url (%s) - curl reported: %s", conf->gatewayUrl, curl_easy_strerror(curl_result_code));
+        return NULL;
     }
     logError(r, "Received raw gateway response, length=%s", curl_context_rec->response_data);
+
+    return curl_context_rec->response_data;
 }
 
 const char* getMethod(SSORestRequestObject* r)

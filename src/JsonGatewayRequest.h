@@ -3,7 +3,7 @@
 #include "Global.h"
 #include "SSORestPlugin.h"
 JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject*, SSORestPluginConfigration*);
-void sendJsonGatewayRequest(SSORestRequestObject*, SSORestPluginConfigration*,  JSonGatewayRequest*);
+char* sendJsonGatewayRequest(SSORestRequestObject*, SSORestPluginConfigration*,  JSonGatewayRequest*);
 void setJsonGatewayRequestAttributes(JSonGatewayRequest* , const char*, const char*);
 
 const char*         getMethod(SSORestRequestObject*);
