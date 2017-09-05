@@ -1,5 +1,6 @@
 #include "Util.h"
 #include <string.h>
+#include <openssl/hmac.h>
 
 #ifndef MAX_SAVED_LENGTHS
 #define MAX_SAVED_LENGTHS (32)
@@ -211,4 +212,44 @@ void generateSecureRandomString(char *s, const int length)
     }
 
     s[length] = '\0';
+}
+
+const char *computeRFC2104HMAC(SSORestRequestObject *r, char *data, char *key)
+{
+    unsigned char *mdString;
+    unsigned char *src;
+    unsigned char *result;
+    unsigned char  result_len;
+    if (key == NULL || data == NULL)
+    {
+        logError(r, "Could not parse parameter");   
+        return NULL;
+    }
+
+    /* Generate HMAC using openssl */
+    mdString = HMAC(EVP_sha1(), key, strlen(key), (u_char*) data, strlen(data), NULL, NULL);
+
+    /* Allocate Memory for generating hmac */
+    src = (unsigned char *) ssorest_pcalloc(r->pool, SHA1_DIGESTLENGTH + 1);
+    if(src == NULL)
+    {
+        logError(r, "Could not Allocate Memory");
+        return NULL;
+    }
+    memcpy(src, mdString, SHA1_DIGESTLENGTH);
+    src[SHA1_DIGESTLENGTH] = '\0';
+
+    /* Base64Encode using Nginx Utility Api */
+    result_len = (((SHA1_DIGESTLENGTH + 2) / 3) * 4);
+    result = (unsigned char *) ssorest_pcalloc(r->pool, result_len + 1);
+
+    if(result == NULL)
+    {
+        logError(r, "Could not Allocate Memory");
+        return NULL;   
+    }
+    result_len = base64_encode(src, result, SHA1_DIGESTLENGTH);
+    result[result_len] = '\0';
+
+    return (const char*) result;
 }
