@@ -108,6 +108,10 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
 
     logError(r, "Gateway provided response status = %d", jsonGatewayResponse->status);
 
+    if (jsonGatewayResponse->status == SSOREST_BAD_GATEWAY || jsonGatewayResponse->status == SSOREST_INTERNAL_ERROR) {
+        return SSOREST_INTERNAL_ERROR;
+    }
+
     if (jsonGatewayResponse->status == SSOREST_SC_NOT_EXTENDED)
     {
         const char *bodyContent = json_object_get_string(jsonGatewayResponse->jsonResponseBody);
@@ -124,6 +128,13 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
             // handleSendLocalFile
         }
     }
+
+    if (jsonGatewayResponse->status == SSOREST_SC_EXTENDED)
+    {
+        // TODO: handleAllowContinue
+    }
+
+
     return SSOREST_OK;
 }
 

@@ -54,7 +54,7 @@
 #define SSOREST_SC_NOT_EXTENDED     510
 #define SSOREST_SC_EXTENDED         200
 #define SSOREST_INTERNAL_ERROR      500
-
+#define SSOREST_BAD_GATEWAY         502
 #define RANDOMTEXT_ATTR             "randomText"
 #define RANDOMTEXT_SIGNED_ATTR      "randomTextSigned"
 #define CHALLENGE_HEADER_NAME       "Challenge"
