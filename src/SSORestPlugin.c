@@ -134,8 +134,36 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
         // TODO: handleAllowContinue
     }
 
+    // Transfer response cookies
 
-    return SSOREST_OK;
+    // Transfer headers
+    if (jsonGatewayResponse->jsonResponseHeader)
+    {
+        json_object_object_foreach(jsonGatewayResponse->jsonResponseHeader, key, jsonVal)
+        {
+            logError(r, "Processing response header from JSon: %s", key);
+            if (strncmp(key, GATEWAY_TOKEN_NAME, strlen(GATEWAY_TOKEN_NAME)) == 0) // skip the gatewayToken
+                continue;
+
+            json_object *jsonValue = json_object_array_get_idx(jsonVal, 0);
+            char *value = (char *) json_object_get_string(jsonValue);
+            
+            #ifdef APACHE
+                apr_table_set(r->headers_out, key, value);
+            #elif NGINX
+                ngx_table_elt_t *header;
+                header   = ngx_list_push(&r->headers_out.headers);
+
+                header->hash = 1;
+                header->key.len = strlen(key);
+                header->key.data = (u_char *) key;
+                header->value.len = strlen(value);
+                header->value.data = (u_char *) value;
+            #endif
+        }
+    }
+
+    return jsonGatewayResponse->status;
 }
 
 int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *jsonGatewayRequest,JSonGatewayResponse *jsonGatewayResponse)
