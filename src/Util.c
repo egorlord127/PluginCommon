@@ -203,6 +203,33 @@ int unescape_str(char *s, char *dec)
     return o - dec;
 }
 
+char *escape_str(SSORestPluginPool *p, const char *src)
+{
+    char *h = "0123456789abcdef";
+    char *copy = ssorest_pcalloc(p, 3 * strlen((char*) src) + 3);
+    const unsigned char *s = (const unsigned char *) src;
+    unsigned char *d = (unsigned char *) copy;
+    unsigned c;
+    while ((c = *s))
+    {
+        if (('a' <= c && c <= 'z')
+                || ('A' <= c && c <= 'Z')
+                || ('0' <= c && c <= '9') || c == '-' || c == '_' || c == '.')
+            *d++ = c;
+        else if (c == ' ')
+            *d++ = '+';
+        else {
+            *d++ = '%';
+            *d++ = h[c >> 4];
+            *d++ = h[c & 0x0f];
+        }
+        ++s;
+    }
+
+    *d = '\0';
+    return copy;
+}
+
 void generateSecureRandomString(char *s, const int length)
 {
     const char alphanum[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";

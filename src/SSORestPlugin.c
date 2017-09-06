@@ -154,7 +154,7 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     {
         const char *digest = computeRFC2104HMAC(r, challengeValue, conf->secretKey);
         setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_ATTR, challengeValue);
-        setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_SIGNED_ATTR, digest);
+        setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_SIGNED_ATTR, escape_str(r->pool, digest));
     }
     else 
     {
@@ -162,7 +162,7 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
         generateSecureRandomString(randomText, 32);
         const char *digest = computeRFC2104HMAC(r, randomText, conf->secretKey);
         setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_ATTR, randomText);
-        setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_SIGNED_ATTR, digest);
+        setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_SIGNED_ATTR, escape_str(r->pool, digest));
     }
     return processJsonPayload(r, conf, jsonGatewayRequest);
 }
