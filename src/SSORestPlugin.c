@@ -1,6 +1,7 @@
 #include "SSORestPlugin.h"
 #include "JsonGatewayRequest.h"
 #include "RequestInfo.h"
+#include "Util.h"
 
 SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
 {
@@ -79,14 +80,19 @@ int processRequestInt(SSORestRequestObject* r, SSORestPluginConfigration* conf, 
         }
     }
     
+    JSonGatewayRequest  *jsonGatewayRequest;
     if (jsonGatewayResponse == NULL || jsonGatewayResponse->jsonRequest == NULL)
     {
-        JSonGatewayRequest  *jsonGatewayRequest;
         jsonGatewayRequest = buildJsonGatewayRequest(r, conf);
-        if (parseJsonGatewayResponse(r, conf, sendJsonGatewayRequest(r, conf, jsonGatewayRequest), &jsonGatewayResponse) == SSOREST_ERROR)
-            return SSOREST_INTERNAL_ERROR;
+    } 
+    else 
+    {
+        jsonGatewayRequest = jsonGatewayResponse->jsonRequest;
     }
-    
+
+    if (parseJsonGatewayResponse(r, conf, sendJsonGatewayRequest(r, conf, jsonGatewayRequest), &jsonGatewayResponse) == SSOREST_ERROR)
+        return SSOREST_INTERNAL_ERROR;
+
     logError(r, "Gateway provided response status = %d", jsonGatewayResponse->status);
 
     if (jsonGatewayResponse->status == SSOREST_SC_NOT_EXTENDED)
@@ -134,6 +140,7 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
     json_object_object_get_ex(jsonGatewayResponse->json, "response", &jsonGatewayResponse->jsonResponse);
     json_object_object_get_ex(jsonGatewayResponse->json, "request", &jsonGatewayResponse->jsonRequest);
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "body", &jsonGatewayResponse->jsonResponseBody);
+    json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "headers", &jsonGatewayResponse->jsonResponseHeader);
     
     json_object *jsonGatewayResponseStatus;
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "status", &jsonGatewayResponseStatus);
@@ -146,43 +153,34 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
 void handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse)
 {
     // Determine if g/w support new challenge model
-    json_object *challenge;
-    json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "headers", &challenge);
-    if (challenge == NULL)
-        logError(r, "Gateway does not support new challenge model");
-    else 
+    int isChallengeModel = 0;
+    json_object *challenge = NULL;
+    
+    if (jsonGatewayResponse->jsonResponseHeader != NULL)
+        json_object_object_get_ex(jsonGatewayResponse->jsonResponseHeader, CHALLENGE_HEADER_NAME, &challenge);
+
+    if (challenge)
+    {
         logError(r, "Gateway support new challenge model");
+        isChallengeModel = 1;
+    }
+    else 
+    {
+        logError(r, "Gateway does not support new challenge model");
+    }
+
+    if (isChallengeModel)
+    {
+
+    }
+    else 
+    {
+        char randomText[33];
+        generateSecureRandomString(randomText, 32);
+        const char *digest = computeRFC2104HMAC(r, randomText, conf->secretKey);
+        setJsonGatewayRequestAttributes(jsonGatewayResponse->jsonRequest, RANDOMTEXT_ATTR, randomText);
+        setJsonGatewayRequestAttributes(jsonGatewayResponse->jsonRequest, RANDOMTEXT_SIGNED_ATTR, digest);
+        // return postRequestToGateway(request_json, r, url, conf, pool);
+    }
 }
 
-// int handleSignatureRequired(json_object *request_json, ngx_http_request_t *r, const char *url, ngx_ssorest_plugin_conf_t *conf, ngx_pool_t *pool) {
-//     char randomText[33];
-//     const char* digest;
-
-//     generateSecureRandomString(randomText, 32);
-//     ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "Generated randomText: %s", randomText);
-//     digest = computeRFC2104HMAC(r, randomText, (char *) conf->secretKey.data);
-//     ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "Generated HMAC: %s", digest);
-
-//     json_object *atts_json;
-//     json_object_object_get_ex(request_json, "attributes", &atts_json);
-
-//     json_object *new_atts_json;
-//     enum json_tokener_error jerr = json_tokener_success; // TODO is this right?
-//     new_atts_json = json_tokener_parse_verbose(json_object_to_json_string(atts_json), &jerr);
-//     // TODO error handling here?
-
-//     // Escape String
-//     json_object_object_add(new_atts_json, "randomText", json_object_new_string(randomText));
-//     json_object_object_add(new_atts_json, "randomTextSigned", json_object_new_string(escape_str(r->pool, digest)));
-
-//     // Remove old gateway token if present
-//     json_object_object_del(new_atts_json, "gatewayToken");
-
-//     json_object_object_del(request_json, "attributes");
-//     json_object_object_add(request_json, "attributes", new_atts_json);
-
-//     logDebug(r->connection->log, 0, "New attributes for subrequest : %s", json_object_to_json_string(new_atts_json));
-
-//     //resend
-//     return postRequestToGateway(request_json, r, url, conf, pool);
-// }

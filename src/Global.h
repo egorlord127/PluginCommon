@@ -54,3 +54,10 @@
 #define SSOREST_SC_NOT_EXTENDED     510
 #define SSOREST_SC_EXTENDED         200
 #define SSOREST_INTERNAL_ERROR      500
+
+#define RANDOMTEXT_ATTR             "randomText"
+#define RANDOMTEXT_SIGNED_ATTR      "randomTextSigned"
+#define CHALLENGE_HEADER_NAME       "Challenge"
+#define GATEWAY_TOKEN_NAME          "gatewayToken"
+#define SIGNATURE_NEEDED            "Signature Needed"
+

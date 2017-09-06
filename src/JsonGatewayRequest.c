@@ -285,9 +285,23 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , SSOR
     return jsonGatewayRequest;
 }
 
-void setJsonGatewayRequestAttributes(JSonGatewayRequest* self, const char* key, const char* value)
+void setJsonGatewayRequestAttributes(JSonGatewayRequest* json, const char* key, const char* value)
 {
-    
+    json_object *jsonGatewayRequestAttributes = NULL;
+    json_object *temp = NULL;
+
+    // Add 'attributes' object if it is not present in json request
+    if (!json_object_object_get_ex(json, "attributes", &jsonGatewayRequestAttributes) || jsonGatewayRequestAttributes == NULL)
+    {
+        json_object *jsonGatewayRequestAttributes = json_object_new_object();
+        json_object_object_add(json, "attributes", jsonGatewayRequestAttributes);
+    }
+        
+    // Delete old object if present
+    if (json_object_object_get_ex(jsonGatewayRequestAttributes, key, &temp) && temp != NULL)
+        json_object_object_del(jsonGatewayRequestAttributes, key);
+
+    json_object_object_add(jsonGatewayRequestAttributes, key, json_object_new_string(value));
 }
 
 
@@ -330,6 +344,9 @@ char* sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration*
         logError(r, "Failed to fetch url (%s) - curl reported: %s", conf->gatewayUrl, curl_easy_strerror(curl_result_code));
         return NULL;
     }
+    /*testcode*/
+    logError(r, "TestCode:%s", curl_context_rec->response_data);
+    /*testcode*/
 
     return curl_context_rec->response_data;
 }

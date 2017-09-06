@@ -214,7 +214,7 @@ void generateSecureRandomString(char *s, const int length)
     s[length] = '\0';
 }
 
-const char *computeRFC2104HMAC(SSORestRequestObject *r, char *data, char *key)
+const char *computeRFC2104HMAC(SSORestRequestObject *r, char *data, const char *key)
 {
     unsigned char *mdString;
     unsigned char *src;
