@@ -148,14 +148,14 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
             if (cookie == NULL || !json_object_is_type(cookie, json_type_array))
                 continue;
 
-            json_object_object_foreach(cookie, key, val) {
+            // json_object_object_foreach(cookie, key, val) {
                 
-                #ifdef APACHE
-                // apr_table_addn(r->headers_out, "Set-Cookie", value);
-                #elif NGINX
+            //     #ifdef APACHE
+            //     // apr_table_addn(r->headers_out, "Set-Cookie", value);
+            //     #elif NGINX
                 
-                #endif
-            }
+            //     #endif
+            // }
         }
     }
     
