@@ -146,19 +146,43 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
             if (jsonVal == NULL)
                 continue;
             
-            json_object *cookie = json_object_array_get_idx(jsonVal, 0);
+            json_object *cookieJson = json_object_array_get_idx(jsonVal, 0);
 
-            if (cookie == NULL || !json_object_is_type(cookie, json_type_array))
+            if (cookieJson == NULL || !json_object_is_type(cookieJson, json_type_array))
                 continue;
 
-            // json_object_object_foreach(cookie, key, val) {
-                
-            //     #ifdef APACHE
-            //     // apr_table_addn(r->headers_out, "Set-Cookie", value);
-            //     #elif NGINX
-                
-            //     #endif
-            // }
+            char *cookieVal;
+            const char *name = NULL;
+            const char *value = NULL;
+            const char *path = NULL;
+            const char *domain = NULL;
+            json_object_object_foreach(cookieJson, ckey, cval) {
+                if (strncmp(ckey, "name", sizeof("name") - 1) == 0) {
+                    name = json_object_get_string(cval);
+                }
+                else if (strncmp(ckey, "value", sizeof("value") - 1) == 0) {
+                    value = json_object_get_string(cval);
+                }
+                else if (strncmp(ckey, "path", sizeof("path") - 1) == 0) {
+                    path = json_object_get_string(cval);
+                }
+                else if (strncmp(ckey, "domain", sizeof("domain") - 1) == 0) {
+                    domain = json_object_get_string(cval);
+                }
+            }
+
+            cookieVal = ssorest_pstrcat(r->pool, name, "=", value, "; domain=", domain, "; path=", path);
+            #ifdef APACHE
+                apr_table_addn(r->headers_out, "Set-Cookie", cookieVal);
+            #elif NGINX
+                ngx_table_elt_t *cookie;
+                cookie = ngx_list_push(&r->headers_out.headers);
+                ngx_str_set(&cookie->key, "Set-Cookie");
+                cookie->value.len = strlen(cookieVal);
+                cookie->value.data = (u_char *) cookieVal;
+            #endif
+
+            logError(r, "Transferring header to response %s %s", key, value);
         }
     }
     
