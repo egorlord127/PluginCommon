@@ -30,17 +30,7 @@ SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
     return conf;
 }
 
-int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf, JSonGatewayResponse *jsonGatewayResponse)
-{
-    if (jsonGatewayResponse != NULL && jsonGatewayResponse->status == SSOREST_SC_EXTENDED)
-    {
-        logError(r, "Found gatewayResponse attribute in request");
-        // TODO: handleAllowContinue
-    }
-    return processRequestInt(r, conf, jsonGatewayResponse);
-}
-
-int processRequestInt(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse)
+int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
 {
     if ( conf->isEnabled == 0) 
     {
@@ -79,7 +69,13 @@ int processRequestInt(SSORestRequestObject* r, SSORestPluginConfigration* conf, 
             return SSOREST_DECLINED;
         }
     }
-    
+
+    int ret = processJsonPayload(r, conf, NULL);
+    logError(r, "Request to Gateway had result code: %d", ret);
+    return ret;
+}
+int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse)
+{
     JSonGatewayRequest  *jsonGatewayRequest;
     if (jsonGatewayResponse == NULL || jsonGatewayResponse->jsonRequest == NULL)
     {
@@ -104,53 +100,17 @@ int processRequestInt(SSORestRequestObject* r, SSORestPluginConfigration* conf, 
         if (p)
         {
             logError(r, "Signature is required for further talking");
-            handleSignatureRequired(r, conf, jsonGatewayResponse);
+            return handleSignatureRequired(r, conf, jsonGatewayResponse);
         }
         else 
         {
             // handleSendLocalFile
         }
-
     }
     return SSOREST_OK;
 }
 
-
-int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration *conf, const char* jsonString, JSonGatewayResponse **res)
-{
-    JSonGatewayResponse *jsonGatewayResponse = NULL;
-    if (jsonString == NULL)
-    {
-        logError(r, "Could not parse because of empty json string");
-        *res = NULL;
-        return SSOREST_ERROR;
-    }
-    if (*res == NULL)
-    {
-        jsonGatewayResponse = ssorest_pcalloc(r->pool, sizeof(JSonGatewayResponse));
-        *res= jsonGatewayResponse;
-    }
-    enum json_tokener_error jerr = json_tokener_success;
-    jsonGatewayResponse->json = json_tokener_parse_verbose(jsonString, &jerr);
-    if (jsonGatewayResponse->json == NULL) {
-        logError(r, "Failed to parse gateway response, error= %s", json_tokener_error_desc(jerr));
-        return SSOREST_ERROR;
-    }
-
-    json_object_object_get_ex(jsonGatewayResponse->json, "response", &jsonGatewayResponse->jsonResponse);
-    json_object_object_get_ex(jsonGatewayResponse->json, "request", &jsonGatewayResponse->jsonRequest);
-    json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "body", &jsonGatewayResponse->jsonResponseBody);
-    json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "headers", &jsonGatewayResponse->jsonResponseHeader);
-    
-    json_object *jsonGatewayResponseStatus;
-    json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "status", &jsonGatewayResponseStatus);
-    jsonGatewayResponse->status = json_object_get_int(jsonGatewayResponseStatus);
-    
-    return SSOREST_OK;
-}
-
-
-void handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse)
+int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse)
 {
     // Determine if g/w support new challenge model
     int isChallengeModel = 0;
@@ -187,5 +147,38 @@ void handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration*
         setJsonGatewayRequestAttributes(jsonGatewayResponse->jsonRequest, RANDOMTEXT_ATTR, randomText);
         setJsonGatewayRequestAttributes(jsonGatewayResponse->jsonRequest, RANDOMTEXT_SIGNED_ATTR, digest);
     }
+    return processJsonPayload(r, conf, jsonGatewayResponse);
 }
 
+int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration *conf, const char* jsonString, JSonGatewayResponse **res)
+{
+    JSonGatewayResponse *jsonGatewayResponse = NULL;
+    if (jsonString == NULL)
+    {
+        logError(r, "Could not parse because of empty json string");
+        *res = NULL;
+        return SSOREST_ERROR;
+    }
+    if (*res == NULL)
+    {
+        jsonGatewayResponse = ssorest_pcalloc(r->pool, sizeof(JSonGatewayResponse));
+        *res= jsonGatewayResponse;
+    }
+    enum json_tokener_error jerr = json_tokener_success;
+    jsonGatewayResponse->json = json_tokener_parse_verbose(jsonString, &jerr);
+    if (jsonGatewayResponse->json == NULL) {
+        logError(r, "Failed to parse gateway response, error= %s", json_tokener_error_desc(jerr));
+        return SSOREST_ERROR;
+    }
+
+    json_object_object_get_ex(jsonGatewayResponse->json, "response", &jsonGatewayResponse->jsonResponse);
+    json_object_object_get_ex(jsonGatewayResponse->json, "request", &jsonGatewayResponse->jsonRequest);
+    json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "body", &jsonGatewayResponse->jsonResponseBody);
+    json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "headers", &jsonGatewayResponse->jsonResponseHeader);
+    
+    json_object *jsonGatewayResponseStatus;
+    json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "status", &jsonGatewayResponseStatus);
+    jsonGatewayResponse->status = json_object_get_int(jsonGatewayResponseStatus);
+    
+    return SSOREST_OK;
+}

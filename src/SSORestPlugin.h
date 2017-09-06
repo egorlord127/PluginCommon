@@ -33,8 +33,8 @@ typedef struct JSonGatewayResponse{
 } JSonGatewayResponse;
 
 SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool*);
-int processRequest(SSORestRequestObject *request, SSORestPluginConfigration *conf, JSonGatewayResponse *jsonGatewayResponse);
-int processRequestInt(SSORestRequestObject *request, SSORestPluginConfigration *conf, JSonGatewayResponse *jsonGatewayResponse);
+int processRequest(SSORestRequestObject *request, SSORestPluginConfigration *conf);
+int processJsonPayload(SSORestRequestObject *request, SSORestPluginConfigration *conf, JSonGatewayResponse *jsonGatewayResponse);
 int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration *conf, const char* jsonString, JSonGatewayResponse **res);
-void handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse);
+int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse);
 typedef json_object JSonGatewayRequest;

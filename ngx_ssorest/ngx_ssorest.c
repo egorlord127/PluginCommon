@@ -321,5 +321,5 @@ static ngx_int_t ngx_ssorest_plugin_init(ngx_conf_t *cf)
 static ngx_int_t ngx_ssorest_plugin_request_handler(ngx_http_request_t *r)
 {
     SSORestPluginConfigration *conf = ngx_http_get_module_srv_conf(r, ngx_ssorest_plugin_module);
-    return processRequest(r, conf, NULL);
+    return processRequest(r, conf);
 }
