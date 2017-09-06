@@ -135,7 +135,7 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
     }
 
     // Transfer response cookies
-
+    
     // Transfer headers
     if (jsonGatewayResponse->jsonResponseHeader)
     {
@@ -145,7 +145,14 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
             if (strncmp(key, GATEWAY_TOKEN_NAME, strlen(GATEWAY_TOKEN_NAME)) == 0) // skip the gatewayToken
                 continue;
 
+            if (jsonVal == NULL)
+                continue;
+            
             json_object *jsonValue = json_object_array_get_idx(jsonVal, 0);
+
+            if (jsonValue == NULL || !json_object_is_type(jsonValue, json_type_string))
+                continue;
+
             char *value = (char *) json_object_get_string(jsonValue);
             
             #ifdef APACHE
@@ -160,8 +167,11 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
                 header->value.len = strlen(value);
                 header->value.data = (u_char *) value;
             #endif
+            logError(r, "Transferring header to response %s %s", key, value);
         }
     }
+
+    // Transfer content
 
     return jsonGatewayResponse->status;
 }
