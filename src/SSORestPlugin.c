@@ -155,12 +155,16 @@ void handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration*
     // Determine if g/w support new challenge model
     int isChallengeModel = 0;
     json_object *challenge = NULL;
-    
+    char *challengeValue = NULL;
     if (jsonGatewayResponse->jsonResponseHeader != NULL)
         json_object_object_get_ex(jsonGatewayResponse->jsonResponseHeader, CHALLENGE_HEADER_NAME, &challenge);
 
     if (challenge)
     {
+        json_object *tmp = json_object_array_get_idx(challenge, 0);
+        if (tmp)
+            challengeValue = (char *) json_object_get_string(tmp);
+
         logError(r, "Gateway support new challenge model");
         isChallengeModel = 1;
     }
@@ -171,7 +175,9 @@ void handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration*
 
     if (isChallengeModel)
     {
-
+        const char *digest = computeRFC2104HMAC(r, challengeValue, conf->secretKey);
+        setJsonGatewayRequestAttributes(jsonGatewayResponse->jsonRequest, RANDOMTEXT_ATTR, challengeValue);
+        setJsonGatewayRequestAttributes(jsonGatewayResponse->jsonRequest, RANDOMTEXT_SIGNED_ATTR, digest);
     }
     else 
     {
@@ -180,7 +186,6 @@ void handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration*
         const char *digest = computeRFC2104HMAC(r, randomText, conf->secretKey);
         setJsonGatewayRequestAttributes(jsonGatewayResponse->jsonRequest, RANDOMTEXT_ATTR, randomText);
         setJsonGatewayRequestAttributes(jsonGatewayResponse->jsonRequest, RANDOMTEXT_SIGNED_ATTR, digest);
-        // return postRequestToGateway(request_json, r, url, conf, pool);
     }
 }
 
