@@ -14,7 +14,7 @@ typedef struct
     const char *localrootpath;
     const char *pluginId;
     const char *secretKey;
-    const char *gatewayToken;
+    char *gatewayToken;
     ssorest_array_t *ssoZone;
     ssorest_array_t *ignoreExt;
     ssorest_array_t *ignoreUrl;

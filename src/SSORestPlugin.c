@@ -108,6 +108,27 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
 
     logError(r, "Gateway provided response status = %d", jsonGatewayResponse->status);
 
+    // Remember the gateway token
+    if (jsonGatewayResponse->jsonResponseHeader != NULL) {
+        json_object *gwTokenJson = NULL;
+        json_bool result = json_object_object_get_ex(jsonGatewayResponse->jsonResponseHeader, "gatewayToken", &gwTokenJson);
+        if (result == TRUE && gwTokenJson != NULL) {
+            json_object *gwTokenValue = NULL;
+            if (json_object_array_length(gwTokenJson))
+                gwTokenValue = json_object_array_get_idx(gwTokenJson, 0);
+
+            if (gwTokenValue != NULL) {
+                const char* gwToken = json_object_get_string(gwTokenValue);
+                int gwTokenlen = strlen(gwToken);
+                conf->gatewayToken = ssorest_pcalloc(conf->cf_pool, gwTokenlen + 1);
+                memcpy(conf->gatewayToken, (char *) gwToken, gwTokenlen);
+                conf->gatewayToken[gwTokenlen] = '\0';
+                logError(r, "Plugin stored gatwayToken=%s, len=%d", conf->gatewayToken, gwTokenlen);
+            }
+        }
+    }
+
+
     if (jsonGatewayResponse->status == SSOREST_BAD_GATEWAY || jsonGatewayResponse->status == SSOREST_INTERNAL_ERROR) {
         return SSOREST_INTERNAL_ERROR;
     }
