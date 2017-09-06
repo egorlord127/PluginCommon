@@ -8,15 +8,15 @@
 static CURL* get_curl_session(SSORestRequestObject* r, SSORestPluginConfigration* conf);
 
 #ifdef NGINX
-static void ssorest_json_cleanup(void *data)
+void ssorest_json_cleanup(void *data)
 {
     json_object_put((json_object *) data);
 }
-static void ssorest_curl_easy_cleanup(void *data)
+void ssorest_curl_easy_cleanup(void *data)
 {
     curl_easy_cleanup((CURL *) data);
 }
-static void ssorest_curl_slist_free_all(void *data)
+void ssorest_curl_slist_free_all(void *data)
 {
     curl_slist_free_all((struct curl_slist *) data);
 }

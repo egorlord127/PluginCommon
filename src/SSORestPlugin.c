@@ -74,20 +74,37 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
     logError(r, "Request to Gateway had result code: %d", ret);
     return ret;
 }
-int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse)
+int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *json)
 {
     JSonGatewayRequest  *jsonGatewayRequest;
-    if (jsonGatewayResponse == NULL || jsonGatewayResponse->jsonRequest == NULL)
+    if (json == NULL)
     {
         jsonGatewayRequest = buildJsonGatewayRequest(r, conf);
     } 
     else 
     {
-        jsonGatewayRequest = jsonGatewayResponse->jsonRequest;
+        jsonGatewayRequest = json;
     }
+    
+    JSonGatewayResponse *jsonGatewayResponse = NULL;
 
     if (parseJsonGatewayResponse(r, conf, sendJsonGatewayRequest(r, conf, jsonGatewayRequest), &jsonGatewayResponse) == SSOREST_ERROR)
         return SSOREST_INTERNAL_ERROR;
+
+    #ifdef APACHE
+        apr_pool_cleanup_register(r->pool, jsonGatewayResponse->json, (void *) json_object_put, apr_pool_cleanup_null);
+    #elif NGINX
+        ngx_pool_cleanup_t  *cln;
+        
+        cln = ngx_pool_cleanup_add(r->pool, 0);
+        if (cln == NULL) 
+        {
+            // TODO: Error Handling
+        }
+        
+        cln->handler = ssorest_json_cleanup;
+        cln->data = jsonGatewayResponse->json;
+    #endif
 
     logError(r, "Gateway provided response status = %d", jsonGatewayResponse->status);
 
@@ -100,7 +117,7 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
         if (p)
         {
             logError(r, "Signature is required for further talking");
-            return handleSignatureRequired(r, conf, jsonGatewayResponse);
+            return handleSignatureRequired(r, conf, jsonGatewayRequest, jsonGatewayResponse);
         }
         else 
         {
@@ -110,7 +127,7 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
     return SSOREST_OK;
 }
 
-int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse)
+int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *jsonGatewayRequest,JSonGatewayResponse *jsonGatewayResponse)
 {
     // Determine if g/w support new challenge model
     int isChallengeModel = 0;
@@ -136,18 +153,18 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     if (isChallengeModel)
     {
         const char *digest = computeRFC2104HMAC(r, challengeValue, conf->secretKey);
-        setJsonGatewayRequestAttributes(jsonGatewayResponse->jsonRequest, RANDOMTEXT_ATTR, challengeValue);
-        setJsonGatewayRequestAttributes(jsonGatewayResponse->jsonRequest, RANDOMTEXT_SIGNED_ATTR, digest);
+        setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_ATTR, challengeValue);
+        setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_SIGNED_ATTR, digest);
     }
     else 
     {
         char randomText[33];
         generateSecureRandomString(randomText, 32);
         const char *digest = computeRFC2104HMAC(r, randomText, conf->secretKey);
-        setJsonGatewayRequestAttributes(jsonGatewayResponse->jsonRequest, RANDOMTEXT_ATTR, randomText);
-        setJsonGatewayRequestAttributes(jsonGatewayResponse->jsonRequest, RANDOMTEXT_SIGNED_ATTR, digest);
+        setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_ATTR, randomText);
+        setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_SIGNED_ATTR, digest);
     }
-    return processJsonPayload(r, conf, jsonGatewayResponse);
+    return processJsonPayload(r, conf, jsonGatewayRequest);
 }
 
 int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration *conf, const char* jsonString, JSonGatewayResponse **res)
