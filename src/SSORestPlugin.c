@@ -3,6 +3,12 @@
 #include "RequestInfo.h"
 #include "Util.h"
 
+/**
+ * createPluginConfiguration
+ * @pool: The pointer to plugin pool.
+ *
+ * Create configuration struct
+ */
 SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
 {
     SSORestPluginConfigration * conf = ssorest_pcalloc(pool, sizeof(SSORestPluginConfigration));
@@ -30,6 +36,15 @@ SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
     return conf;
 }
 
+/**
+ * processRequest
+ * @r:           The pointer to request object.
+ * @conf:        The pointer to plugin configuration.
+ *
+ * Interpret the request and evaluate it,
+ *
+ * Return http status code depending on g/w response.
+ */
 int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
 {
     if ( conf->isEnabled == 0) 
@@ -74,6 +89,17 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
     logError(r, "Request to Gateway had result code: %d", ret);
     return ret;
 }
+
+/**
+ * processJsonPayload
+ * @r:           The pointer to request object.
+ * @conf:        The pointer to plugin configuration.
+ * @json:        The pointer to json request
+ *
+ * Process the Json-based communication according to g/w result.
+ *
+ * Return http status code depending on g/w response.
+ */
 int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *json)
 {
     JSonGatewayRequest  *jsonGatewayRequest;
@@ -226,6 +252,21 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
     return jsonGatewayResponse->status;
 }
 
+/**
+ * handleSignatureRequired
+ * @r:                      The pointer to request object.
+ * @conf:                   The pointer to plugin configuration.
+ * @jsonGatewayRequest:     The pointer to json request
+ * @jsonGatewayResponse:    The pointer to json response struct
+ *
+ * It handles Signature
+ * Handling signatuere is requried for the first time.
+ * G/w support 2 kind of models regarding signature validation.
+ *  - Challenge Model
+ *     G/w send random string and module should send it back to g/w with hmac
+ *  - Old Model 
+ *     Module should send a pair of randomText and its hmac, they should be validated on g/w side.
+ */
 int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *jsonGatewayRequest,JSonGatewayResponse *jsonGatewayResponse)
 {
     // Determine if g/w support new challenge model
@@ -266,6 +307,20 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     return processJsonPayload(r, conf, jsonGatewayRequest);
 }
 
+/**
+ * parseJsonGatewayResponse
+ * @r:                      The pointer to request object.
+ * @conf:                   The pointer to plugin configuration.
+ * @jsonString:             The json request string
+ * @jsonGatewayResponse:    The pointer to json response struct
+ *
+ * Parse string into json object.
+ * Parse @jsonString into @jsonGatewayResponse 
+ *
+ * Return Values
+ * SSOREST_OK: means parsing is succeeded.
+ * SSOREST_ERROR: means parsing is failed
+ */
 int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration *conf, const char* jsonString, JSonGatewayResponse **res)
 {
     JSonGatewayResponse *jsonGatewayResponse = NULL;
@@ -310,6 +365,15 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
     return SSOREST_OK;
 }
 
+/**
+ * setGatewayToken
+ * @r:                      The pointer to request object.
+ * @conf:                   The pointer to plugin configuration.
+ * @jsonGatewayResponse:    The pointer to json response struct
+ *
+ * Store gatewayToken in configuration.
+ *
+ */
 void setGatewayToken(SSORestRequestObject *r, SSORestPluginConfigration *conf, JSonGatewayResponse *jsonGatewayResponse)
 {
     if (jsonGatewayResponse->jsonResponseHeader != NULL) {

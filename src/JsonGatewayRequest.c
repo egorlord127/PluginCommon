@@ -22,17 +22,26 @@ void ssorest_curl_slist_free_all(void *data)
 }
 #endif
 
-JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , SSORestPluginConfigration *conf)
+/**
+ * buildJsonGatewayRequest
+ * @r:           The pointer to request object.
+ * @conf:        The pointer to plugin configuration.
+ *
+ * Build Json Gateway request to be sent to g/w.
+ *
+ * Return json object
+ */
+JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPluginConfigration *conf)
 {
     JSonGatewayRequest *jsonGatewayRequest = json_object_new_object();
 
     // Add Cleanup handler
     #ifdef APACHE
-        apr_pool_cleanup_register(request->pool, jsonGatewayRequest, (void *) json_object_put, apr_pool_cleanup_null);
+        apr_pool_cleanup_register(r->pool, jsonGatewayRequest, (void *) json_object_put, apr_pool_cleanup_null);
     #elif NGINX
         ngx_pool_cleanup_t  *cln;
         
-        cln = ngx_pool_cleanup_add(request->pool, 0);
+        cln = ngx_pool_cleanup_add(r->pool, 0);
         if (cln == NULL) 
         {
              // TODO: Error Handling
@@ -43,62 +52,62 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , SSOR
     #endif
 
     // method
-    json_object_object_add(jsonGatewayRequest, "method", json_object_new_string(getMethod(request)));
+    json_object_object_add(jsonGatewayRequest, "method", json_object_new_string(getMethod(r)));
     
     // url
-    json_object_object_add(jsonGatewayRequest, "url", json_object_new_string(getUrl(request)));
+    json_object_object_add(jsonGatewayRequest, "url", json_object_new_string(getUrl(r)));
     
     // protocol
-    json_object_object_add(jsonGatewayRequest, "protocol", json_object_new_string(getProtocol(request)));
+    json_object_object_add(jsonGatewayRequest, "protocol", json_object_new_string(getProtocol(r)));
 
     // characterEncoding
-    json_object_object_add(jsonGatewayRequest, "characterEncoding", json_object_new_string(getCharacterEncoding(request)));
+    json_object_object_add(jsonGatewayRequest, "characterEncoding", json_object_new_string(getCharacterEncoding(r)));
 
     // contentLength
-    json_object_object_add(jsonGatewayRequest, "contentLength", json_object_new_int(getContentLength(request)));
+    json_object_object_add(jsonGatewayRequest, "contentLength", json_object_new_int(getContentLength(r)));
 
     // contentType
-    json_object_object_add(jsonGatewayRequest, "contentType", json_object_new_string(getContentType(request)));
+    json_object_object_add(jsonGatewayRequest, "contentType", json_object_new_string(getContentType(r)));
 
     // contextPath
-    json_object_object_add(jsonGatewayRequest, "contextPath", json_object_new_string(getContextPath(request)));
+    json_object_object_add(jsonGatewayRequest, "contextPath", json_object_new_string(getContextPath(r)));
 
     // localAddr
-    json_object_object_add(jsonGatewayRequest, "localAddr", json_object_new_string(getLocalAddr(request)));
+    json_object_object_add(jsonGatewayRequest, "localAddr", json_object_new_string(getLocalAddr(r)));
 
     // localName
-    json_object_object_add(jsonGatewayRequest, "localName", json_object_new_string(getLocalName(request)));
+    json_object_object_add(jsonGatewayRequest, "localName", json_object_new_string(getLocalName(r)));
 
     // localPort
-    json_object_object_add(jsonGatewayRequest, "localPort", json_object_new_int(getLocalPort(request)));
+    json_object_object_add(jsonGatewayRequest, "localPort", json_object_new_int(getLocalPort(r)));
 
     // remoteAddr
-    json_object_object_add(jsonGatewayRequest, "remoteAddr", json_object_new_string(getRemoteAddr(request)));
+    json_object_object_add(jsonGatewayRequest, "remoteAddr", json_object_new_string(getRemoteAddr(r)));
 
     // remoteHost
-    json_object_object_add(jsonGatewayRequest, "remoteHost", json_object_new_string(getRemoteHost(request)));
+    json_object_object_add(jsonGatewayRequest, "remoteHost", json_object_new_string(getRemoteHost(r)));
 
     // remotePort
-    json_object_object_add(jsonGatewayRequest, "remotePort", json_object_new_int(getRemotePort(request)));
+    json_object_object_add(jsonGatewayRequest, "remotePort", json_object_new_int(getRemotePort(r)));
 
     // secure
-    json_object_object_add(jsonGatewayRequest, "secure", json_object_new_boolean(getSecure(request)));
+    json_object_object_add(jsonGatewayRequest, "secure", json_object_new_boolean(getSecure(r)));
 
     // scheme
-    json_object_object_add(jsonGatewayRequest, "scheme", json_object_new_string(getScheme(request)));
+    json_object_object_add(jsonGatewayRequest, "scheme", json_object_new_string(getScheme(r)));
 
     // serverName
-    json_object_object_add(jsonGatewayRequest, "serverName", json_object_new_string(getServerName(request)));
+    json_object_object_add(jsonGatewayRequest, "serverName", json_object_new_string(getServerName(r)));
 
     // serverPort
-    json_object_object_add(jsonGatewayRequest, "serverPort", json_object_new_int(getServerPort(request)));
+    json_object_object_add(jsonGatewayRequest, "serverPort", json_object_new_int(getServerPort(r)));
 
     // servletPath
     json_object_object_add(jsonGatewayRequest, "servletPath", json_object_new_string(""));
 
     // locales
     json_object* jsonarray_locale = json_object_new_array();
-    ssorest_array_t* locales = getLocales(request);
+    ssorest_array_t* locales = getLocales(r);
     UINT i;
     for (i = 0; i < locales->nelts; i++)
     {
@@ -118,32 +127,32 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , SSOR
     
     // headers: accept-language
     json_object* jsonHeaderAcceptLanguage = json_object_new_array();
-    json_object_array_add(jsonHeaderAcceptLanguage, json_object_new_string(getAcceptLanguage(request)));
+    json_object_array_add(jsonHeaderAcceptLanguage, json_object_new_string(getAcceptLanguage(r)));
     json_object_object_add(jsonGatewayRequestHeaders, "accept-language", jsonHeaderAcceptLanguage);
 
     // headers: connection
     json_object* jsonHeaderConnection = json_object_new_array();
-    json_object_array_add(jsonHeaderConnection, json_object_new_string(getConnection(request)));
+    json_object_array_add(jsonHeaderConnection, json_object_new_string(getConnection(r)));
     json_object_object_add(jsonGatewayRequestHeaders, "connection", jsonHeaderConnection);
 
     // headers: accept
     json_object* jsonHeaderAccept = json_object_new_array();
-    json_object_array_add(jsonHeaderAccept, json_object_new_string(getAccept(request)));
+    json_object_array_add(jsonHeaderAccept, json_object_new_string(getAccept(r)));
     json_object_object_add(jsonGatewayRequestHeaders, "accept", jsonHeaderAccept);
 
     // headers: host
     json_object* jsonHeaderHost = json_object_new_array();
-    json_object_array_add(jsonHeaderHost, json_object_new_string(getHost(request)));
+    json_object_array_add(jsonHeaderHost, json_object_new_string(getHost(r)));
     json_object_object_add(jsonGatewayRequestHeaders, "host", jsonHeaderHost);
 
     // headers: accept-encoding
     json_object* jsonHeaderAcceptEncoding = json_object_new_array();
-    json_object_array_add(jsonHeaderAcceptEncoding, json_object_new_string(getAcceptEncoding(request)));
+    json_object_array_add(jsonHeaderAcceptEncoding, json_object_new_string(getAcceptEncoding(r)));
     json_object_object_add(jsonGatewayRequestHeaders, "accept-encoding", jsonHeaderAcceptEncoding);
 
     // headers: user-agent
     json_object* jsonHeaderUserAgent = json_object_new_array();
-    json_object_array_add(jsonHeaderUserAgent, json_object_new_string(getUserAgent(request)));
+    json_object_array_add(jsonHeaderUserAgent, json_object_new_string(getUserAgent(r)));
     json_object_object_add(jsonGatewayRequestHeaders, "user-agent", jsonHeaderUserAgent);
 
     // headers
@@ -151,7 +160,7 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , SSOR
 
     // cookies
     json_object* jsonGatewayRequestCookies = json_object_new_array();
-    const char *cookiestring = getCookies(request);
+    const char *cookiestring = getCookies(r);
     char *rest = (char *) cookiestring;
     char *cookie_name = NULL;
     char *cookie_value = NULL;
@@ -160,8 +169,8 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , SSOR
     {
         json_object *json_cookies = json_object_new_object();
 
-        cookie_name = ssorest_pcalloc(request->pool, strlen(cookie));
-        cookie_value = ssorest_pcalloc(request->pool, strlen(cookie));
+        cookie_name = ssorest_pcalloc(r->pool, strlen(cookie));
+        cookie_value = ssorest_pcalloc(r->pool, strlen(cookie));
         sscanf(cookie, "%[^=]=%s", cookie_name, cookie_value);
 
         if(conf->ssoZone)
@@ -178,7 +187,7 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , SSOR
                     UINT ssozone_len = ((ngx_str_t *)conf->ssoZone->elts)[i].len;
                 #endif
                 if (!strncasecmp((char *) cookie_name, ssozone, ssozone_len)) {
-                    logError(request, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
+                    logError(r, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
                     json_object_object_add(json_cookies, "name", json_object_new_string((const char*) cookie_name));
                     json_object_object_add(json_cookies, "value", json_object_new_string((const char*) cookie_value));
                     json_object_array_add(jsonGatewayRequestCookies, json_cookies);
@@ -187,9 +196,9 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , SSOR
                 }
             }
             if(!flag)
-                logError(request, "Skipping request cookie outside of our zone: %s", cookie_name);
+                logError(r, "Skipping request cookie outside of our zone: %s", cookie_name);
         } else {
-            logError(request, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
+            logError(r, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
             json_object_object_add(json_cookies, "name", json_object_new_string((const char*) cookie_name));
             json_object_object_add(json_cookies, "value", json_object_new_string((const char*) cookie_value));
             json_object_array_add(jsonGatewayRequestCookies, json_cookies); 
@@ -214,15 +223,15 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , SSOR
         char *inner_key = NULL;
         char *inner_value = NULL;
         
-        char *args = (char *) getRequestArgs(request);
+        char *args = (char *) getRequestArgs(r);
     
         for (pair = strtok_r(args, "&", &saved); pair; pair = strtok_r(NULL, "&", &saved)) {
             jsonarray_value = json_object_new_array();
-            key = ssorest_pcalloc(request->pool, strlen(pair));
-            value = ssorest_pcalloc(request->pool, strlen(pair));
+            key = ssorest_pcalloc(r->pool, strlen(pair));
+            value = ssorest_pcalloc(r->pool, strlen(pair));
             if (key == NULL || value == NULL)
             {
-                logError(request, "Could not Allocate Memory");
+                logError(r, "Could not Allocate Memory");
             }
             sscanf(pair, "%[^=]=%s", key, value);
             json_object_object_get_ex(jsonGatewayRequestParameters, key, &json_temp);
@@ -231,32 +240,32 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , SSOR
             }
     
             // Unescape querystring Value
-            char *unesc_str = ssorest_pcalloc(request->pool, strlen(value) + 1);
+            char *unesc_str = ssorest_pcalloc(r->pool, strlen(value) + 1);
             if (unesc_str == NULL)
             {
-                logError(request, "Could not Allocate Memory");
+                logError(r, "Could not Allocate Memory");
             }
             unescape_str(value, unesc_str);
             json_object_array_add(jsonarray_value, json_object_new_string(unesc_str));
     
-            inner_args = ssorest_pcalloc(request->pool, strlen(saved) + 1);
+            inner_args = ssorest_pcalloc(r->pool, strlen(saved) + 1);
             memcpy(inner_args, saved, strlen(saved));
             inner_args[strlen(saved)] = '\0';
     
             for (inner_pair = strtok_r(inner_args, "&", &inner_saved); inner_pair;
                     inner_pair = strtok_r(NULL, "&", &inner_saved))
                             {
-                inner_key = ssorest_pcalloc(request->pool, strlen(inner_pair));
-                inner_value = ssorest_pcalloc(request->pool, strlen(inner_pair));
+                inner_key = ssorest_pcalloc(r->pool, strlen(inner_pair));
+                inner_value = ssorest_pcalloc(r->pool, strlen(inner_pair));
                 sscanf(inner_pair, "%[^=]=%s", inner_key, inner_value);
     
                 if (strcmp(key, inner_key) == 0)
                         {
                     // Unescape querystring Value
-                    char *unesc_str = ssorest_pcalloc(request->pool, strlen(inner_value) + 1);
+                    char *unesc_str = ssorest_pcalloc(r->pool, strlen(inner_value) + 1);
                     if (unesc_str == NULL)
                     {
-                        logError(request, "Could not Allocate Memory");
+                        logError(r, "Could not Allocate Memory");
                     }
                     unescape_str(inner_value, unesc_str);
                     json_object_array_add(jsonarray_value, json_object_new_string(unesc_str));
@@ -285,6 +294,15 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *request , SSOR
     return jsonGatewayRequest;
 }
 
+/**
+ * setJsonGatewayRequestAttributes
+ * @json:   The pointer to json request
+ * @key:    The key to be added in json request.
+ * @value:  The value to be added in json request
+ *
+ * Add json object in 'attributes' of json request.
+ *
+ */
 void setJsonGatewayRequestAttributes(JSonGatewayRequest* json, const char* key, const char* value)
 {
     json_object *jsonGatewayRequestAttributes = NULL;
@@ -306,7 +324,7 @@ void setJsonGatewayRequestAttributes(JSonGatewayRequest* json, const char* key, 
 
 
 /**
- * sendJsonGatewayRequest:
+ * sendJsonGatewayRequest
  * @r:           The pointer to request object.
  * @conf:        The pointer to plugin configuration.
  * @jsonRequest: The pointer to Json Reqeust object
@@ -351,11 +369,20 @@ char* sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration*
     return curl_context_rec->response_data;
 }
 
+/**
+ * get_curl_session:
+ * @r:           The pointer to request object.
+ * @conf:        The pointer to plugin configuration.
+ *
+ * Create curl context on configuration pool once,
+ * this curl context can be used for further curl operation.
+ *
+ * Return curl context.
+ * Return Null if something wrong.
+ */
 static CURL* get_curl_session(SSORestRequestObject* r, SSORestPluginConfigration* conf)
 {
-	if ( conf->curl_session ) {
-
-	} else {
+	if ( conf->curl_session == NULL) {
 		conf->curl_session = curl_easy_init();
 		if ( conf->curl_session ) {
             #ifdef APACHE
