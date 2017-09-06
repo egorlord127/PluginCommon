@@ -135,6 +135,29 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
     }
 
     // Transfer response cookies
+    if (jsonGatewayResponse->jsonResponseCookies)
+    {
+        json_object_object_foreach(jsonGatewayResponse->jsonResponseCookies, key, jsonVal)
+        {
+            logError(r, "Processing response cookie from JSon: %s", key);
+            if (jsonVal == NULL)
+                continue;
+            
+            json_object *cookie = json_object_array_get_idx(jsonVal, 0);
+
+            if (cookie == NULL || !json_object_is_type(cookie, json_type_array))
+                continue;
+
+            json_object_object_foreach(cookie, key, val) {
+                
+                #ifdef APACHE
+                // apr_table_addn(r->headers_out, "Set-Cookie", value);
+                #elif NGINX
+                
+                #endif
+            }
+        }
+    }
     
     // Transfer headers
     if (jsonGatewayResponse->jsonResponseHeader)
