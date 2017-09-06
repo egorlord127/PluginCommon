@@ -166,7 +166,7 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
     }
     enum json_tokener_error jerr = json_tokener_success;
     jsonGatewayResponse->json = json_tokener_parse_verbose(jsonString, &jerr);
-    if (jsonGatewayResponse->json == NULL || jerr == json_tokener_success) {
+    if (jsonGatewayResponse->json == NULL || jerr != json_tokener_success) {
         logError(r, "Failed to parse gateway response, error= %s", json_tokener_error_desc(jerr));
         return SSOREST_ERROR;
     }
