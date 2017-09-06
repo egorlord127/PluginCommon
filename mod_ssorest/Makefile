@@ -11,7 +11,6 @@ SOURCES= \
     ../src/SSORestPlugin.c \
 	../src/RequestInfo.c \
 	../src/JsonGatewayRequest.c \
-	../src/JsonGatewayResponse.c \
 	../src/Util.c \
 	../src/CurlWrapper.c \
 

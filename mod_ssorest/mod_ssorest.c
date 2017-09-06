@@ -135,7 +135,7 @@ static const char *setSSORestIgnoreUrl(cmd_parms *parms, void *cfg, const char *
 static int process(request_rec *r)
 {
     SSORestPluginConfigration *conf = ap_get_module_config(r->server->module_config, &ssorest_module);
-    processRequest(r, conf);
+    processRequest(r, conf, NULL);
     
     return OK;
 }

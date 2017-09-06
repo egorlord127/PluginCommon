@@ -51,6 +51,5 @@
 #endif
 
 #define SSOREST_ERROR    (SSOREST_DECLINED)
-#define 
 #define SC_NOT_EXTENDED  510
 #define SC_EXTENDED      200

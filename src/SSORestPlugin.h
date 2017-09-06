@@ -1,5 +1,6 @@
 #pragma once
 #include "Global.h"
+// #include "JsonGatewayResponse.h"
 #include <json-c/json.h>
 #include <curl/curl.h>
 typedef struct 
@@ -21,14 +22,18 @@ typedef struct
     SSORestPluginPool *cf_pool;
 } SSORestPluginConfigration;
 
-typedef struct 
-{
-    SSORestPluginConfigration* pluginConfiguration;
-} SSORestPlugin;
-
-
+typedef struct JSonGatewayResponse{
+    json_object *json;
+    json_object *jsonRequest;
+    json_object *jsonResponse;
+    json_object *jsonResponseBody;
+    json_object *jsonResponseHeader;
+    json_object *jsonResponseCookies;
+    int status;
+} JSonGatewayResponse;
 
 SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool*);
-int processRequest(SSORestRequestObject* request, SSORestPluginConfigration* plugin);
+int processRequest(SSORestRequestObject *request, SSORestPluginConfigration *conf, JSonGatewayResponse *jsonGatewayResponse);
+int processRequestInt(SSORestRequestObject *request, SSORestPluginConfigration *conf, JSonGatewayResponse *jsonGatewayResponse);
 
 typedef json_object JSonGatewayRequest;
