@@ -109,25 +109,7 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
     logError(r, "Gateway provided response status = %d", jsonGatewayResponse->status);
 
     // Remember the gateway token
-    if (jsonGatewayResponse->jsonResponseHeader != NULL) {
-        json_object *gwTokenJson = NULL;
-        json_bool result = json_object_object_get_ex(jsonGatewayResponse->jsonResponseHeader, "gatewayToken", &gwTokenJson);
-        if (result == TRUE && gwTokenJson != NULL) {
-            json_object *gwTokenValue = NULL;
-            if (json_object_array_length(gwTokenJson))
-                gwTokenValue = json_object_array_get_idx(gwTokenJson, 0);
-
-            if (gwTokenValue != NULL) {
-                const char* gwToken = json_object_get_string(gwTokenValue);
-                int gwTokenlen = strlen(gwToken);
-                conf->gatewayToken = ssorest_pcalloc(conf->cf_pool, gwTokenlen + 1);
-                memcpy(conf->gatewayToken, (char *) gwToken, gwTokenlen);
-                conf->gatewayToken[gwTokenlen] = '\0';
-                logError(r, "Plugin stored gatwayToken=%s, len=%d", conf->gatewayToken, gwTokenlen);
-            }
-        }
-    }
-
+    setGatewayToken(r, conf, jsonGatewayResponse);
 
     if (jsonGatewayResponse->status == SSOREST_BAD_GATEWAY || jsonGatewayResponse->status == SSOREST_INTERNAL_ERROR) {
         return SSOREST_INTERNAL_ERROR;
@@ -274,11 +256,22 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
         jsonGatewayResponse = ssorest_pcalloc(r->pool, sizeof(JSonGatewayResponse));
         *res= jsonGatewayResponse;
     }
+    
     enum json_tokener_error jerr = json_tokener_success;
     jsonGatewayResponse->json = json_tokener_parse_verbose(jsonString, &jerr);
     if (jsonGatewayResponse->json == NULL || jerr != json_tokener_success) {
         logError(r, "Failed to parse gateway response, error= %s", json_tokener_error_desc(jerr));
         return SSOREST_ERROR;
+    }
+    
+    const char *pretty = json_object_to_json_string_ext(jsonGatewayResponse->json, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
+    logError(r, "Parsed reply from Gateway:");
+    int linenr = 0;
+    char *ptr, *temp = NULL;
+    ptr = strtok_r((char *) pretty, "\n", &temp);
+    while (ptr != NULL) {
+        logError(r, "%3d: %s", ++linenr, ptr);
+        ptr = strtok_r(NULL, "\n", &temp);
     }
 
     json_object_object_get_ex(jsonGatewayResponse->json, "response", &jsonGatewayResponse->jsonResponse);
@@ -291,4 +284,26 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
     jsonGatewayResponse->status = json_object_get_int(jsonGatewayResponseStatus);
     
     return SSOREST_OK;
+}
+
+void setGatewayToken(SSORestRequestObject *r, SSORestPluginConfigration *conf, JSonGatewayResponse *jsonGatewayResponse)
+{
+    if (jsonGatewayResponse->jsonResponseHeader != NULL) {
+        json_object *gwTokenJson = NULL;
+        json_bool result = json_object_object_get_ex(jsonGatewayResponse->jsonResponseHeader, "gatewayToken", &gwTokenJson);
+        if (result == TRUE && gwTokenJson != NULL) {
+            json_object *gwTokenValue = NULL;
+            if (json_object_array_length(gwTokenJson))
+                gwTokenValue = json_object_array_get_idx(gwTokenJson, 0);
+
+            if (gwTokenValue != NULL) {
+                const char* gwToken = json_object_get_string(gwTokenValue);
+                int gwTokenlen = strlen(gwToken);
+                conf->gatewayToken = ssorest_pcalloc(conf->cf_pool, gwTokenlen + 1);
+                memcpy(conf->gatewayToken, (char *) gwToken, gwTokenlen);
+                conf->gatewayToken[gwTokenlen] = '\0';
+                logError(r, "Plugin stored gatwayToken=%s, len=%d", conf->gatewayToken, gwTokenlen);
+            }
+        }
+    }
 }
