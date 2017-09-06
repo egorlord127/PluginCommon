@@ -330,7 +330,6 @@ char* sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration*
         logError(r, "Failed to fetch url (%s) - curl reported: %s", conf->gatewayUrl, curl_easy_strerror(curl_result_code));
         return NULL;
     }
-    logError(r, "Received raw gateway response, length=%s", curl_context_rec->response_data);
 
     return curl_context_rec->response_data;
 }

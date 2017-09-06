@@ -50,6 +50,7 @@
     #define logDebug(r,  ...) 	ngx_log_error_core(NGX_LOG_DEBUG,   r->connection->log, 0, __VA_ARGS__)
 #endif
 
-#define SSOREST_ERROR    (SSOREST_DECLINED)
-#define SC_NOT_EXTENDED  510
-#define SC_EXTENDED      200
+#define SSOREST_ERROR               (SSOREST_DECLINED)
+#define SSOREST_SC_NOT_EXTENDED     510
+#define SSOREST_SC_EXTENDED         200
+#define SSOREST_INTERNAL_ERROR      500

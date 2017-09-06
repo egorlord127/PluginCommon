@@ -31,8 +31,9 @@ SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
 
 int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf, JSonGatewayResponse *jsonGatewayResponse)
 {
-    if (jsonGatewayResponse != NULL && jsonGatewayResponse->status == SC_EXTENDED)
+    if (jsonGatewayResponse != NULL && jsonGatewayResponse->status == SSOREST_SC_EXTENDED)
     {
+        logError(r, "Found gatewayResponse attribute in request");
         // TODO: handleAllowContinue
     }
     return processRequestInt(r, conf, jsonGatewayResponse);
@@ -77,30 +78,34 @@ int processRequestInt(SSORestRequestObject* r, SSORestPluginConfigration* conf, 
             return SSOREST_DECLINED;
         }
     }
+    
+    if (jsonGatewayResponse == NULL || jsonGatewayResponse->jsonRequest == NULL)
+    {
+        JSonGatewayRequest  *jsonGatewayRequest;
+        jsonGatewayRequest = buildJsonGatewayRequest(r, conf);
+        if (parseJsonGatewayResponse(r, conf, sendJsonGatewayRequest(r, conf, jsonGatewayRequest), &jsonGatewayResponse) == SSOREST_ERROR)
+            return SSOREST_INTERNAL_ERROR;
+    }
+    
+    logError(r, "Gateway provided response status = %d", jsonGatewayResponse->status);
 
-    // JSonGatewayRequest  *jsonGatewayRequest;
-    // JSonGatewayResponse *jsonGatewayResponse = NULL;
-    // jsonGatewayRequest = buildJsonGatewayRequest(r, conf);
-    // if (parseJsonGatewayResponse(r, conf, sendJsonGatewayRequest(r, conf, jsonGatewayRequest), &jsonGatewayResponse) == SSOREST_ERROR)
-    //     return SSOREST_OK;
+    if (jsonGatewayResponse->status == SSOREST_SC_NOT_EXTENDED)
+    {
+        const char *bodyContent = json_object_get_string(jsonGatewayResponse->jsonResponseBody);
+        char *p = NULL;
+        if (bodyContent)
+            p = strstr(bodyContent, "Signature Needed");
+        if (p)
+        {
+            logError(r, "Signature is required for further talking");
+            handleSignatureRequired(r, conf, jsonGatewayResponse);
+        }
+        else 
+        {
+            // handleSendLocalFile
+        }
 
-    // logError(r, "Gateway provided response status = %d", jsonGatewayResponse->status);
-    // if (jsonGatewayResponse->status == SC_NOT_EXTENDED)
-    // {
-    //     const char *bodyContent = json_object_get_string(jsonGatewayResponse->jsonResponseBody);
-    //     char *p = NULL;
-    //     if (bodyContent)
-    //         p = strstr(bodyContent, "Signature Needed");
-    //     if (p)
-    //     {
-    //         // handleSignatureRequired();
-    //     }
-    //     else 
-    //     {
-    //         // handleSendLocalFile
-    //     }
-
-    // }
+    }
     return SSOREST_OK;
 }
 
@@ -126,16 +131,6 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
         return SSOREST_ERROR;
     }
 
-    // const char *pretty = json_object_to_json_string_ext(jsonGatewayResponse->json, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
-    // logError(r, "Parsed reply from Gateway:");
-    // int linenr = 0;
-    // char *ptr, *temp = NULL;
-    // ptr = strtok_r((char *) pretty, "\n", &temp);
-    // while (ptr != NULL) {
-    //     logError(r, "%3d: %s", ++linenr, ptr);
-    //     ptr = strtok_r(NULL, "\n", &temp);
-    // }
-
     json_object_object_get_ex(jsonGatewayResponse->json, "response", &jsonGatewayResponse->jsonResponse);
     json_object_object_get_ex(jsonGatewayResponse->json, "request", &jsonGatewayResponse->jsonRequest);
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "body", &jsonGatewayResponse->jsonResponseBody);
@@ -146,3 +141,48 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
     
     return SSOREST_OK;
 }
+
+
+void handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse)
+{
+    // Determine if g/w support new challenge model
+    json_object *challenge;
+    json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "headers", &challenge);
+    if (challenge == NULL)
+        logError(r, "Gateway does not support new challenge model");
+    else 
+        logError(r, "Gateway support new challenge model");
+}
+
+// int handleSignatureRequired(json_object *request_json, ngx_http_request_t *r, const char *url, ngx_ssorest_plugin_conf_t *conf, ngx_pool_t *pool) {
+//     char randomText[33];
+//     const char* digest;
+
+//     generateSecureRandomString(randomText, 32);
+//     ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "Generated randomText: %s", randomText);
+//     digest = computeRFC2104HMAC(r, randomText, (char *) conf->secretKey.data);
+//     ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "Generated HMAC: %s", digest);
+
+//     json_object *atts_json;
+//     json_object_object_get_ex(request_json, "attributes", &atts_json);
+
+//     json_object *new_atts_json;
+//     enum json_tokener_error jerr = json_tokener_success; // TODO is this right?
+//     new_atts_json = json_tokener_parse_verbose(json_object_to_json_string(atts_json), &jerr);
+//     // TODO error handling here?
+
+//     // Escape String
+//     json_object_object_add(new_atts_json, "randomText", json_object_new_string(randomText));
+//     json_object_object_add(new_atts_json, "randomTextSigned", json_object_new_string(escape_str(r->pool, digest)));
+
+//     // Remove old gateway token if present
+//     json_object_object_del(new_atts_json, "gatewayToken");
+
+//     json_object_object_del(request_json, "attributes");
+//     json_object_object_add(request_json, "attributes", new_atts_json);
+
+//     logDebug(r->connection->log, 0, "New attributes for subrequest : %s", json_object_to_json_string(new_atts_json));
+
+//     //resend
+//     return postRequestToGateway(request_json, r, url, conf, pool);
+// }
