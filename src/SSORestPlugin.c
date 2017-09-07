@@ -336,12 +336,27 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
         jsonGatewayResponse = ssorest_pcalloc(r->pool, sizeof(JSonGatewayResponse));
         *res= jsonGatewayResponse;
     }
-    
+
+    // Debug Raw gateway response
+    if (conf->isDebugEnabled)
+    {
+        logError(r, "Received raw gateway response:");
+        logError(r, "%s", jsonString);
+    }
+        
     enum json_tokener_error jerr = json_tokener_success;
     jsonGatewayResponse->json = json_tokener_parse_verbose(jsonString, &jerr);
     if (jsonGatewayResponse->json == NULL || jerr != json_tokener_success) {
         logError(r, "Failed to parse gateway response, error= %s", json_tokener_error_desc(jerr));
         return SSOREST_ERROR;
+    }
+
+    // Debug Json Response
+    if (conf->isDebugEnabled)
+    {
+        const char *pretty = json_object_to_json_string_ext(jsonGatewayResponse->json, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
+        logError(r, "Parsed reply from Gateway:");    
+        logError(r, "%s", pretty);
     }
 
     json_object_object_get_ex(jsonGatewayResponse->json, "response", &jsonGatewayResponse->jsonResponse);
