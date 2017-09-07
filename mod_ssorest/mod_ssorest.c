@@ -9,6 +9,7 @@ static const char *setSSORestEnable(cmd_parms *parms, void *cfg, const char* arg
 static const char *setSSORestTrace(cmd_parms *parms, void *cfg, const char *arg);
 static const char *setSSORestUseServerNameAsDefault(cmd_parms *parms, void *cfg, const char *arg);
 static const char *setSSORestSendFormParameters(cmd_parms *parms, void *cfg, const char *arg);
+static const char *setSSORestDebugEnabled(cmd_parms *parms, void *cfg, const char *arg);
 static const char *setSSORestACOName(cmd_parms *parms, void *cfg, const char *arg);
 static const char *setSSORestGatewayUrl(cmd_parms *parms, void *cfg, const char *arg);
 static const char *setSSORestLocalContent(cmd_parms *parms, void *cfg, const char *arg);
@@ -24,6 +25,7 @@ static const command_rec moduleDirectives[] =
     AP_INIT_TAKE1("SSORestTrace", setSSORestTrace, NULL, OR_ALL, "Enable or disable libcurl debug"),
     AP_INIT_TAKE1("SSORestUseServerNameAsDefault", setSSORestUseServerNameAsDefault, NULL, OR_ALL, ""),
     AP_INIT_TAKE1("SSORestSendFormParameters", setSSORestSendFormParameters, NULL, OR_ALL, ""),
+    AP_INIT_TAKE1("SSORestDebugEnabled", setSSORestDebugEnabled, NULL, OR_ALL, ""),
     AP_INIT_TAKE1("SSORestACOName", setSSORestACOName, NULL, OR_ALL, ""),
     AP_INIT_TAKE1("SSORestGatewayUrl", setSSORestGatewayUrl, NULL, OR_ALL, "Gateway Location"),
     AP_INIT_TAKE1("SSORestLocalContent",setSSORestLocalContent, NULL, OR_ALL, "Gateway Location"),
@@ -78,6 +80,13 @@ static const char *setSSORestSendFormParameters(cmd_parms *parms, void *cfg, con
     SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
     if (!strcasecmp(arg, "on"))
         conf->sendFormParameters = 1;
+    return NULL;
+}
+static const char *setSSORestDebugEnabled(cmd_parms *parms, void *cfg, const char *arg)
+{
+    SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
+    if (!strcasecmp(arg, "on"))
+        conf->isDebugEnabled = 1;
     return NULL;
 }
 static const char *setSSORestACOName(cmd_parms *parms, void *cfg, const char *arg)

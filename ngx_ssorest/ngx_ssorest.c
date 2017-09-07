@@ -9,6 +9,7 @@ static char *setSSORestEnable(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestTrace(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestUseServerNameAsDefault(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestSendFormParameters(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
+static char *setSSORestDebugEnabled(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestACOName(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestGatewayUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestLocalContent(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
@@ -47,6 +48,14 @@ static ngx_command_t moduleDirectives[] = {
         ngx_string("SSORestSendFormParameters"),
         NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_CONF_FLAG,
                 setSSORestSendFormParameters,
+                NGX_HTTP_SRV_CONF_OFFSET,
+                0,
+                NULL
+        },
+        {
+        ngx_string("SSORestDebugEnabled"),
+        NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_CONF_FLAG,
+                setSSORestDebugEnabled,
                 NGX_HTTP_SRV_CONF_OFFSET,
                 0,
                 NULL
@@ -199,6 +208,14 @@ static char *setSSORestSendFormParameters(ngx_conf_t *cf, ngx_command_t *cmd, vo
     ngx_str_t *value = cf->args->elts;
     if (!ngx_strcasecmp(value[1].data, (u_char *) "on"))
         conf->sendFormParameters = 1;
+    return NGX_CONF_OK;
+}
+static char *setSSORestDebugEnabled(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
+{
+    SSORestPluginConfigration *conf = cfg;
+    ngx_str_t *value = cf->args->elts;
+    if (!ngx_strcasecmp(value[1].data, (u_char *) "on"))
+        conf->isDebugEnabled = 1;
     return NGX_CONF_OK;
 }
 static char *setSSORestACOName(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)

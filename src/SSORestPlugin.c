@@ -17,6 +17,7 @@ SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
     conf->isTraceEnabled         = 0;
     conf->useServerNameAsDefault = 0;
     conf->sendFormParameters     = 0;
+    conf->isDebugEnabled         = 0;
     conf->acoName                = NULL;
     conf->gatewayUrl             = NULL;
     conf->localrootpath          = NULL;

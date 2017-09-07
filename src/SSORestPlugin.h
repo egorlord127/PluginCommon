@@ -9,6 +9,7 @@ typedef struct
     int isTraceEnabled;
     int useServerNameAsDefault;
     int sendFormParameters;
+    int isDebugEnabled;
     const char *acoName;
     const char *gatewayUrl;
     const char *localrootpath;
