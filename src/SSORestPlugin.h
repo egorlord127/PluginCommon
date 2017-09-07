@@ -26,6 +26,7 @@ typedef struct
 typedef struct JSonGatewayResponse{
     json_object *json;
     json_object *jsonRequest;
+    json_object *jsonRequestHeader;
     json_object *jsonResponse;
     json_object *jsonResponseBody;
     json_object *jsonResponseHeader;
@@ -41,3 +42,4 @@ int processJsonPayload(SSORestRequestObject *request, SSORestPluginConfigration 
 void setGatewayToken(SSORestRequestObject *request, SSORestPluginConfigration *conf, JSonGatewayResponse *res);
 int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration *conf, const char* jsonString, JSonGatewayResponse **res);
 int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *jsonGatewayRequest,JSonGatewayResponse *jsonGatewayResponse);
+int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse);

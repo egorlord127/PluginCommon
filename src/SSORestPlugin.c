@@ -161,7 +161,7 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
 
     if (jsonGatewayResponse->status == SSOREST_SC_EXTENDED)
     {
-        // TODO: handleAllowContinue
+        handleAllowContinue(r, conf, jsonGatewayResponse);
     }
 
     // Transfer response cookies
@@ -308,6 +308,41 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     return processJsonPayload(r, conf, jsonGatewayRequest);
 }
 
+int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse)
+{
+    logError(r, "Entering handleAllowContinue");
+
+    // Transfer request headers
+    json_object_object_foreach(jsonGatewayResponse->jsonRequestHeader, key, jsonVal) {
+        if (!strcasecmp(key, "cookie"))
+            continue;
+        if (jsonVal == NULL || !json_object_is_type(jsonVal, json_type_array))
+            continue;
+        if (!json_object_array_length(jsonVal))
+            continue;
+        
+        json_object *header = json_object_array_get_idx(jsonVal, 0);
+        if (header == NULL || !json_object_is_type(header, json_type_string))
+            continue;
+        
+        const char *value = json_object_get_string(header);
+        if (value == NULL)
+            continue;
+        
+        #ifdef APAHCE
+            ssorest_table_set(r->headers_in, key, value);
+        #elif NGINX
+            ssorest_table_set(&r->headers_in.headers, key, value);
+        #endif
+    }
+
+    // Transfer request cookies
+    
+    // Transfer any new cookies to the response
+
+    logError(r, "Exiting handleAllowContinue");
+    return SSOREST_OK;
+}
 /**
  * parseJsonGatewayResponse
  * @r:                      The pointer to request object.
@@ -361,6 +396,7 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
 
     json_object_object_get_ex(jsonGatewayResponse->json, "response", &jsonGatewayResponse->jsonResponse);
     json_object_object_get_ex(jsonGatewayResponse->json, "request", &jsonGatewayResponse->jsonRequest);
+    json_object_object_get_ex(jsonGatewayResponse->jsonRequest, "headers", &jsonGatewayResponse->jsonRequestHeader);
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "body", &jsonGatewayResponse->jsonResponseBody);
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "headers", &jsonGatewayResponse->jsonResponseHeader);
     
@@ -401,3 +437,46 @@ void setGatewayToken(SSORestRequestObject *r, SSORestPluginConfigration *conf, J
         }
     }
 }
+
+#ifdef NGINX
+void ssorest_table_set(ngx_list_t *header, const char *key, const char *value)
+{
+    // Search if the same name exists in the header
+    ngx_list_part_t *part;
+    ngx_table_elt_t *h;
+    ngx_table_elt_t *ho = NULL;
+    ngx_uint_t       i;
+    ngx_uint_t       key_len = strlen(key);
+
+    part = &header->part;
+    h = part->elts;
+
+    for (i = 0; ; i++) {
+        if (i >= part->nelts) {
+            if (part->next == NULL) {
+                break;
+            }
+
+            part = part->next;
+            h = part->elts;
+            i = 0;
+        }
+        if (key_len != h[i].key.len || ngx_strcasecmp((u_char *) key, h[i].key.data) != 0) {
+            continue;
+        }
+        ho = &h[i];
+    }
+    if (ho == NULL)
+    {
+        ho = ngx_list_push(header);
+        if (ho == NULL)
+        {
+            // TODO: Error Handling 
+        }
+    }   
+    ho->key.len = strlen(key);
+    ho->key.data = (u_char *) key;
+    ho->value.len = strlen(value);
+    ho->value.data = (u_char *) value;
+}
+#endif

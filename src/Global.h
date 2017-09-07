@@ -16,6 +16,7 @@
     #define ssorest_palloc(pool, size) (apr_palloc(pool, size))
     #define ssorest_array_create(pool, nelts, elt_size) (apr_array_make(pool, nelts, elt_size))
     #define ssorest_array_push(arr) (apr_array_push(arr))
+    #define ssorest_table_set (table, key, value) (apr_table_set(table, key, value))
     #define logEmerg(r,  ...) 	ap_log_error(APLOG_MARK, APLOG_EMERG,   0,  r->server, __VA_ARGS__)
     #define logAlert(r,  ...) 	ap_log_error(APLOG_MARK, APLOG_ALERT,   0,  r->server, __VA_ARGS__)
     #define logCrit(r,   ...) 	ap_log_error(APLOG_MARK, APLOG_CRIT,    0,  r->server, __VA_ARGS__)
@@ -48,6 +49,7 @@
     #define logNotice(r, ...) 	ngx_log_error_core(NGX_LOG_NOTICE,  r->connection->log, 0, __VA_ARGS__)
     #define logInfo(r,   ...) 	ngx_log_error_core(NGX_LOG_INFO,    r->connection->log, 0, __VA_ARGS__)
     #define logDebug(r,  ...) 	ngx_log_error_core(NGX_LOG_DEBUG,   r->connection->log, 0, __VA_ARGS__)
+    void ssorest_table_set(ngx_list_t *header, const char *key, const char *value);
 #endif
 
 #define SSOREST_ERROR               (SSOREST_DECLINED)
