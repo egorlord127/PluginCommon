@@ -343,16 +343,6 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
         logError(r, "Failed to parse gateway response, error= %s", json_tokener_error_desc(jerr));
         return SSOREST_ERROR;
     }
-    
-    const char *pretty = json_object_to_json_string_ext(jsonGatewayResponse->json, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
-    logError(r, "Parsed reply from Gateway:");
-    int linenr = 0;
-    char *ptr, *temp = NULL;
-    ptr = strtok_r((char *) pretty, "\n", &temp);
-    while (ptr != NULL) {
-        logError(r, "%3d: %s", ++linenr, ptr);
-        ptr = strtok_r(NULL, "\n", &temp);
-    }
 
     json_object_object_get_ex(jsonGatewayResponse->json, "response", &jsonGatewayResponse->jsonResponse);
     json_object_object_get_ex(jsonGatewayResponse->json, "request", &jsonGatewayResponse->jsonRequest);

@@ -356,15 +356,20 @@ char* sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration*
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     }
 
+    // Debug Json Request
+    if (conf->isDebugEnabled)
+    {
+        const char *pretty = json_object_to_json_string_ext(jsonRequest, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
+        logError(r, "Sending JSon request to Gateway:");    
+        logError(r, "%s", pretty);
+    }
+    
     curl_result_code = curl_easy_perform(curl);
     if (curl_result_code != CURLE_OK)
     {
         logError(r, "Failed to fetch url (%s) - curl reported: %s", conf->gatewayUrl, curl_easy_strerror(curl_result_code));
         return NULL;
     }
-    /*testcode*/
-    logError(r, "TestCode:%s", curl_context_rec->response_data);
-    /*testcode*/
 
     return curl_context_rec->response_data;
 }

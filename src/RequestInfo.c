@@ -25,8 +25,9 @@ const char* getUrl(SSORestRequestObject* r)
             return ssorest_pstrcat(r->pool, scheme, "://", server_name, toStringSafety(r->pool, r->unparsed_uri.data, r->unparsed_uri.len), NULL);
         }
 
-        char *portwithcomma = ngx_pnalloc(r->pool, sizeof(":65535") - 1);
-        ngx_sprintf((u_char *) portwithcomma, ":%ui", port);
+        char *portwithcomma = ngx_pnalloc(r->pool, sizeof(":65535"));
+        int len = ngx_sprintf((u_char *) portwithcomma, ":%ui", port) - (u_char *) portwithcomma;
+        portwithcomma[len] = '\0';
         return ssorest_pstrcat(r->pool, scheme, "://", server_name, portwithcomma, toStringSafety(r->pool, r->unparsed_uri.data, r->unparsed_uri.len), NULL);
     #endif
 }
