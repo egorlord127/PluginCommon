@@ -313,8 +313,15 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
     logError(r, "Entering handleAllowContinue");
 
     // Transfer request headers
-    if (jsonGatewayResponse->jsonRequestHeader != NULL)
+    if (jsonGatewayResponse->jsonRequestHeader != NULL && json_object_is_type(jsonGatewayResponse->jsonRequestHeader, json_type_array))
     {
+        if (conf->isDebugEnabled)
+        {
+            const char *pretty = json_object_to_json_string_ext(jsonGatewayResponse->jsonRequestHeader, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
+            logError(r, "Transferring gateway request headers to request:");    
+            logError(r, "%s", pretty);
+        }
+
         json_object_object_foreach(jsonGatewayResponse->jsonRequestHeader, key, jsonVal) {
             if (!strcasecmp(key, "cookie"))
                 continue;
@@ -337,13 +344,27 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
                 ssorest_table_set(&r->headers_in.headers, key, value);
             #endif
         }
+    } else {
+        logError(r, "Not Found headers in the gateway response");
     }
+
     // Transfer request cookies
     
     // Transfer any new cookies to the response
-    if (jsonGatewayResponse->jsonResponseCookies != NULL || !json_object_is_type(jsonGatewayResponse->jsonResponseCookies, json_type_array))
+    if (jsonGatewayResponse->jsonResponseCookies != NULL && json_object_is_type(jsonGatewayResponse->jsonResponseCookies, json_type_array))
     {
+        if (conf->isDebugEnabled)
+        {
+            const char *pretty = json_object_to_json_string_ext(jsonGatewayResponse->jsonResponseCookies, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
+            logError(r, "Transferring gateway cookie to response:");    
+            if (pretty != NULL)
+                logError(r, "%s", pretty);
+        }
+
         int arraylen = json_object_array_length(jsonGatewayResponse->jsonResponseCookies);
+        /*testcode*/
+        logError(r, "%d", arraylen);
+        /*testcode*/
         int i;
         for (i = 0; i < arraylen; i++)
         {
@@ -385,6 +406,8 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
                 #endif
             }
         }
+    } else {
+        logError(r, "Not Found cookies in the gateway response");
     }
 
     logError(r, "Exiting handleAllowContinue");
