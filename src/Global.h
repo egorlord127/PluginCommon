@@ -62,4 +62,7 @@
 #define CHALLENGE_HEADER_NAME       "Challenge"
 #define GATEWAY_TOKEN_NAME          "gatewayToken"
 #define SIGNATURE_NEEDED            "Signature Needed"
+#define HEADERS_IN                  1
+#define HEADERS_OUT                 0
+
 

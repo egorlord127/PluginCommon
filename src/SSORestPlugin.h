@@ -43,3 +43,4 @@ void setGatewayToken(SSORestRequestObject *request, SSORestPluginConfigration *c
 int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration *conf, const char* jsonString, JSonGatewayResponse **res);
 int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *jsonGatewayRequest,JSonGatewayResponse *jsonGatewayResponse);
 int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse);
+void propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *, int dir);

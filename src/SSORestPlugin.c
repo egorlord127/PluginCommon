@@ -348,44 +348,8 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
         logError(r, "Entering handleAllowContinue");
 
     // Transfer request headers
-    if (jsonGatewayResponse->jsonRequestHeader != NULL && json_object_is_type(jsonGatewayResponse->jsonRequestHeader, json_type_array))
-    {
-        if (conf->isDebugEnabled)
-        {
-            const char *pretty = json_object_to_json_string_ext(jsonGatewayResponse->jsonRequestHeader, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
-            logError(r, "Transferring gateway request headers to request:");    
-            logError(r, "%s", pretty);
-        }
-
-        json_object_object_foreach(jsonGatewayResponse->jsonRequestHeader, key, jsonVal) {
-            if (!strcasecmp(key, "cookie"))
-                continue;
-            if (jsonVal == NULL || !json_object_is_type(jsonVal, json_type_array))
-                continue;
-            if (!json_object_array_length(jsonVal))
-                continue;
-            
-            json_object *header = json_object_array_get_idx(jsonVal, 0);
-            if (header == NULL || !json_object_is_type(header, json_type_string))
-                continue;
-            
-            const char *value = json_object_get_string(header);
-            if (value == NULL)
-                continue;
-            
-            if (conf->isDebugEnabled)
-                logError(r, "Propagating request header: %s=%s", key, value);
-
-            #ifdef APAHCE
-                ssorest_table_set(r->headers_in, key, value);
-            #elif NGINX
-                ssorest_table_set(&r->headers_in.headers, key, value);
-            #endif
-        }
-    } else {
-        if (conf->isDebugEnabled)
-            logError(r, "Not Found headers in the gateway response");
-    }
+    propagateHeader(r, conf, jsonGatewayResponse->jsonRequestHeader, HEADERS_IN);
+    
 
     // Transfer request cookies
     
@@ -553,6 +517,66 @@ void setGatewayToken(SSORestRequestObject *r, SSORestPluginConfigration *conf, J
     
     if (conf->isDebugEnabled)
         logError(r, "Plugin stored gatwayToken=%s, len=%d", conf->gatewayToken, gatewayTokenLength);
+}
+
+void propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *headers, int dir)
+{
+    if (dir != HEADERS_IN || dir != HEADERS_OUT)
+    {
+        logError(r, "Wrong Parameter: only support HEADERS_IN or HEADERS_OUT");
+        return;
+    }
+
+    if (headers == NULL || !json_object_is_type(headers, json_type_array))
+    {
+        logError(r, "Could not found headers");
+        return;
+    }
+    
+    if (conf->isDebugEnabled)
+    {
+        const char *pretty = json_object_to_json_string_ext(headers, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
+        logError(r, "Transferring gateway request headers");    
+        logError(r, "%s", pretty);
+    }
+
+    json_object_object_foreach(headers, key, jsonVal) {
+        if (!strcasecmp(key, "cookie") || !strcasecmp(key, GATEWAY_TOKEN_NAME))
+            continue;
+
+        if (jsonVal == NULL || !json_object_is_type(jsonVal, json_type_array))
+            continue;
+
+        if (!json_object_array_length(jsonVal))
+            continue;
+        
+        json_object *header = json_object_array_get_idx(jsonVal, 0);
+        if (header == NULL || !json_object_is_type(header, json_type_string))
+            continue;
+        
+        const char *value = json_object_get_string(header);
+        if (value == NULL)
+            continue;
+        
+        if (conf->isDebugEnabled)
+            logError(r, "Propagating request header: %s=%s", key, value);
+
+        #ifdef APAHCE
+            if (dir == HEADERS_IN)
+            {
+                ssorest_table_set(r->headers_in, key, value);
+            } else {
+                ssorest_table_set(r->headers_out, key, value);
+            }
+        #elif NGINX
+            if (dir == HEADERS_IN)
+            {
+                ssorest_table_set(&r->headers_in.headers, key, value);
+            } else {
+                ssorest_table_set(&r->headers_out.headers, key, value);
+            }
+        #endif
+    }
 }
 
 #ifdef NGINX
