@@ -219,27 +219,23 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     json_object *challenge = NULL;
     char *challengeValue = NULL;
 
-    if (jsonGatewayResponse->jsonResponseHeader == NULL || !json_object_is_type(jsonGatewayResponse->jsonResponseHeader, json_type_object))
+    if (jsonGatewayResponse->jsonResponseHeader != NULL && json_object_is_type(jsonGatewayResponse->jsonResponseHeader, json_type_object))
     {
-        logError(r, "Could not found gateway response header");
-        return SSOREST_INTERNAL_ERROR;
-    }
+        json_object_object_get_ex(jsonGatewayResponse->jsonResponseHeader, CHALLENGE_HEADER_NAME, &challenge);
 
-    json_object_object_get_ex(jsonGatewayResponse->jsonResponseHeader, CHALLENGE_HEADER_NAME, &challenge);
-
-    if (challenge && json_object_is_type(challenge, json_type_array))
-    {
-        if (json_object_array_length(challenge))
+        if (challenge && json_object_is_type(challenge, json_type_array))
         {
-            json_object *tmp = json_object_array_get_idx(challenge, 0);
-            if (tmp && json_object_is_type(tmp, json_type_string))
+            if (json_object_array_length(challenge))
             {
-                challengeValue = (char *) json_object_get_string(tmp);
-                isChallengeModel = 1;
+                json_object *tmp = json_object_array_get_idx(challenge, 0);
+                if (tmp && json_object_is_type(tmp, json_type_string))
+                {
+                    challengeValue = (char *) json_object_get_string(tmp);
+                    isChallengeModel = 1;
+                }
             }
         }
     }
-
     if (isChallengeModel)
     {
         if (conf->isDebugEnabled)
