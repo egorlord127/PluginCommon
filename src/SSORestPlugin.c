@@ -555,7 +555,9 @@ int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, j
             }
             else 
             {
-                newCookie = ssorest_pstrcat(r->pool, cname, "=", cvalue, "; ", NULL);
+                // Get existing cookie first
+                const char *cookiestring = getCookies(r);
+                newCookie = ssorest_pstrcat(r->pool, cname, "=", cvalue, "; ", cookiestring, NULL);
                 if (conf->isDebugEnabled)
                     logError(r, "Sending gateway cookie to request: %s\n", newCookie);
 
