@@ -50,10 +50,12 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
 {
     if ( conf->isEnabled == 0) 
     {
-        logError(r, "SSO/Rest Plugin is disabled");
+        if (conf->isDebugEnabled)
+            logError(r, "SSO/Rest Plugin is disabled");
         return SSOREST_DECLINED;
     }
-    logError(r, "Processing new request:%s", getUrl(r));
+    if (conf->isDebugEnabled)
+        logError(r, "Processing new request:%s", getUrl(r));
 
     /* 1.Check if the request uri matches with ignored extension */
     const char *requestExt = getRequestFileExtension(r);
@@ -66,7 +68,8 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
             const char *s = (const char *) ((ngx_str_t *)conf->ignoreExt->elts)[i].data;
         #endif
         if (strcmp(s, requestExt) == 0) {
-            logError(r, "Ignore Extension Matched");
+            if (conf->isDebugEnabled)
+                logError(r, "Ignore Extension Matched");
             return SSOREST_DECLINED;
         }
     }
@@ -81,13 +84,15 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
             const char *ignoreuri = (const char *) ((ngx_str_t *)conf->ignoreUrl->elts)[i].data;
         #endif
         if (strstr(uri, ignoreuri)) {
-            logError(r, "Ignore Url Matched");
+            if (conf->isDebugEnabled)
+                logError(r, "Ignore Url Matched");
             return SSOREST_DECLINED;
         }
     }
 
     int ret = processJsonPayload(r, conf, NULL);
-    logError(r, "Request to Gateway had result code: %d", ret);
+    if (conf->isDebugEnabled)
+        logError(r, "Request to Gateway had result code: %d", ret);
     return ret;
 }
 
