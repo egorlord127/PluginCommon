@@ -336,12 +336,19 @@ void setJsonGatewayRequestAttributes(JSonGatewayRequest* json, const char* key, 
  */
 char* sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest* jsonRequest)
 {
-	CURLcode curl_result_code;
-	// long curl_http_code = 0;
+    // Debug Json Request : TODO: Investigate why Postfields are messed up if json_object_to_json_string_ext is called after json_object_to_json_string 
+    if (conf->isDebugEnabled)
+    {
+        const char *pretty = json_object_to_json_string_ext(jsonRequest, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
+        logError(r, "Sending JSon request to Gateway:");    
+        logError(r, "%s", pretty);
+    }
+
+    CURLcode curl_result_code;
 	CurlContextRec *curl_context_rec = ssorest_pcalloc(r->pool, sizeof(*curl_context_rec));
 	curl_context_rec->pool = r->pool;
     CURL *curl = get_curl_session(r, conf);
-
+    
     curl_easy_setopt(curl, CURLOPT_URL, conf->gatewayUrl);
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_object_to_json_string(jsonRequest));
@@ -354,14 +361,6 @@ char* sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration*
         curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, CurlTraceDebug);
         curl_easy_setopt(curl, CURLOPT_DEBUGDATA, r);
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-    }
-
-    // Debug Json Request
-    if (conf->isDebugEnabled)
-    {
-        const char *pretty = json_object_to_json_string_ext(jsonRequest, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
-        logError(r, "Sending JSon request to Gateway:");    
-        logError(r, "%s", pretty);
     }
     
     curl_result_code = curl_easy_perform(curl);
