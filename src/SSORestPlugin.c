@@ -215,7 +215,7 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     json_object *challenge = NULL;
     char *challengeValue = NULL;
 
-    if (jsonGatewayResponse->jsonResponseHeader != NULL)
+    if (jsonGatewayResponse->jsonResponseHeader == NULL || !json_object_is_type(jsonGatewayResponse->jsonResponseHeader, json_type_object))
     {
         logError(r, "Could not found gateway response header");
         return SSOREST_INTERNAL_ERROR;
