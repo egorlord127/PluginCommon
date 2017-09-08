@@ -161,7 +161,7 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
 
     if (jsonGatewayResponse->status == SSOREST_SC_EXTENDED)
     {
-        handleAllowContinue(r, conf, jsonGatewayResponse);
+        return handleAllowContinue(r, conf, jsonGatewayResponse);
     }
 
     // Transfer response cookies
@@ -313,32 +313,79 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
     logError(r, "Entering handleAllowContinue");
 
     // Transfer request headers
-    json_object_object_foreach(jsonGatewayResponse->jsonRequestHeader, key, jsonVal) {
-        if (!strcasecmp(key, "cookie"))
-            continue;
-        if (jsonVal == NULL || !json_object_is_type(jsonVal, json_type_array))
-            continue;
-        if (!json_object_array_length(jsonVal))
-            continue;
-        
-        json_object *header = json_object_array_get_idx(jsonVal, 0);
-        if (header == NULL || !json_object_is_type(header, json_type_string))
-            continue;
-        
-        const char *value = json_object_get_string(header);
-        if (value == NULL)
-            continue;
-        
-        #ifdef APAHCE
-            ssorest_table_set(r->headers_in, key, value);
-        #elif NGINX
-            ssorest_table_set(&r->headers_in.headers, key, value);
-        #endif
+    if (jsonGatewayResponse->jsonRequestHeader != NULL)
+    {
+        json_object_object_foreach(jsonGatewayResponse->jsonRequestHeader, key, jsonVal) {
+            if (!strcasecmp(key, "cookie"))
+                continue;
+            if (jsonVal == NULL || !json_object_is_type(jsonVal, json_type_array))
+                continue;
+            if (!json_object_array_length(jsonVal))
+                continue;
+            
+            json_object *header = json_object_array_get_idx(jsonVal, 0);
+            if (header == NULL || !json_object_is_type(header, json_type_string))
+                continue;
+            
+            const char *value = json_object_get_string(header);
+            if (value == NULL)
+                continue;
+            
+            #ifdef APAHCE
+                ssorest_table_set(r->headers_in, key, value);
+            #elif NGINX
+                ssorest_table_set(&r->headers_in.headers, key, value);
+            #endif
+        }
     }
-
     // Transfer request cookies
     
     // Transfer any new cookies to the response
+    if (jsonGatewayResponse->jsonResponseCookies != NULL || !json_object_is_type(jsonGatewayResponse->jsonResponseCookies, json_type_array))
+    {
+        int arraylen = json_object_array_length(jsonGatewayResponse->jsonResponseCookies);
+        int i;
+        for (i = 0; i < arraylen; i++)
+        {
+            json_object *jsonCookie = json_object_array_get_idx(jsonGatewayResponse->jsonResponseCookies, i);
+            if (jsonCookie == NULL || !json_object_is_type(jsonCookie, json_type_array))
+                continue;
+            if (!json_object_array_length(jsonCookie))
+                continue;
+            json_object_object_foreach(jsonCookie, key, jsonValue) {
+                const char *cname = NULL;
+                const char *cvalue = NULL;
+                const char *cpath = NULL;
+                const char *cdomain = NULL;
+                
+                if (jsonValue == NULL || !json_object_is_type(jsonValue, json_type_string))
+                    continue;
+                const char *value = json_object_get_string(jsonValue);
+                if (strncmp(key, "name", sizeof("name") - 1) == 0) {
+                    cname = value;
+                } else if (strncmp(key, "value", sizeof("value") - 1) == 0) {
+                    cvalue = value;
+                } else if (strncmp(key, "path", sizeof("path") - 1) == 0) {
+                    cpath = value;
+                } else if (strncmp(key, "domain", sizeof("domain") - 1) == 0) {
+                    cdomain = value;
+                }
+
+                if (!cname || !cvalue)
+                    continue;
+
+                if (conf->isDebugEnabled)
+                    logError(r, "Found Response cookie %s=%s", cname, cvalue);
+                
+                char *newCookie = ssorest_pstrcat(r->pool, cname, "=", cvalue, "; domain=", cdomain, "; path=",cpath, NULL);
+                #ifdef APACHE
+                    ssorest_table_set(r->headers_out, "Set-Cookie", newCookie);  
+                #elif NGINX
+                    ssorest_table_set(&r->headers_out.headers, "Set-Cookie", newCookie);
+                #endif
+            }
+        }
+    }
 
     logError(r, "Exiting handleAllowContinue");
     return SSOREST_OK;
