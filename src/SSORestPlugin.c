@@ -138,7 +138,8 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
         cln->data = jsonGatewayResponse->json;
     #endif
 
-    logError(r, "Gateway provided response status = %d", jsonGatewayResponse->status);
+    if (conf->isEnabled)
+        logError(r, "Gateway provided response status = %d", jsonGatewayResponse->status);
 
     // Remember the gateway token
     setGatewayToken(r, conf, jsonGatewayResponse);
@@ -151,11 +152,12 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
     {
         const char *bodyContent = json_object_get_string(jsonGatewayResponse->jsonResponseBody);
         char *p = NULL;
-        if (bodyContent)
+        if (bodyContent && conf->isDebugEnabled)
             p = strstr(bodyContent, "Signature Needed");
         if (p)
         {
-            logError(r, "Signature is required for further talking");
+            if (conf->isDebugEnabled)
+                logError(r, "Signature is required for further talking");
             return handleSignatureRequired(r, conf, jsonGatewayRequest, jsonGatewayResponse);
         }
         else 
@@ -279,34 +281,56 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     int isChallengeModel = 0;
     json_object *challenge = NULL;
     char *challengeValue = NULL;
+
     if (jsonGatewayResponse->jsonResponseHeader != NULL)
-        json_object_object_get_ex(jsonGatewayResponse->jsonResponseHeader, CHALLENGE_HEADER_NAME, &challenge);
-
-    if (challenge)
     {
-        json_object *tmp = json_object_array_get_idx(challenge, 0);
-        if (tmp)
-            challengeValue = (char *) json_object_get_string(tmp);
-
-        logError(r, "Gateway support new challenge model");
-        isChallengeModel = 1;
+        logError(r, "Could not found gateway response header");
+        return SSOREST_INTERNAL_ERROR;
     }
-    else 
+
+    json_object_object_get_ex(jsonGatewayResponse->jsonResponseHeader, CHALLENGE_HEADER_NAME, &challenge);
+
+    if (challenge && json_object_is_type(challenge, json_type_array))
     {
-        logError(r, "Gateway does not support new challenge model");
+        if (json_object_array_length(challenge))
+        {
+            json_object *tmp = json_object_array_get_idx(challenge, 0);
+            if (tmp && json_object_is_type(tmp, json_type_string))
+            {
+                challengeValue = (char *) json_object_get_string(tmp);
+                isChallengeModel = 1;
+            }
+        }
     }
 
     if (isChallengeModel)
     {
+        if (conf->isDebugEnabled)
+            logError(r, "Gateway support new challenge model");
+        
         const char *digest = computeRFC2104HMAC(r, challengeValue, conf->secretKey);
+        if (challengeValue == NULL || digest == NULL)
+        {
+            logError(r, "Failed to generate hmac from challengeValue");
+            return SSOREST_INTERNAL_ERROR;
+        }
         setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_ATTR, challengeValue);
         setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_SIGNED_ATTR, escape_str(r->pool, digest));
     }
     else 
     {
+        if (conf->isDebugEnabled)
+            logError(r, "Gateway does not support new challenge model");
+        
         char randomText[33];
         generateSecureRandomString(randomText, 32);
         const char *digest = computeRFC2104HMAC(r, randomText, conf->secretKey);
+        
+        if (randomText == NULL || digest == NULL)
+        {
+            logError(r, "Failed to generate hmac from randomText");
+            return SSOREST_INTERNAL_ERROR;
+        }
         setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_ATTR, randomText);
         setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_SIGNED_ATTR, escape_str(r->pool, digest));
     }
@@ -493,24 +517,29 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
  */
 void setGatewayToken(SSORestRequestObject *r, SSORestPluginConfigration *conf, JSonGatewayResponse *jsonGatewayResponse)
 {
-    if (jsonGatewayResponse->jsonResponseHeader != NULL) {
-        json_object *gwTokenJson = NULL;
-        json_bool result = json_object_object_get_ex(jsonGatewayResponse->jsonResponseHeader, "gatewayToken", &gwTokenJson);
-        if (result == TRUE && gwTokenJson != NULL) {
-            json_object *gwTokenValue = NULL;
-            if (json_object_array_length(gwTokenJson))
-                gwTokenValue = json_object_array_get_idx(gwTokenJson, 0);
+    if (jsonGatewayResponse->jsonResponseHeader == NULL || !json_object_is_type(jsonGatewayResponse->jsonRequestHeader, json_type_object))
+        return;
+    
+    json_object *gatewayTokenJson = NULL;
+    json_object_object_get_ex(jsonGatewayResponse->jsonResponseHeader, GATEWAY_TOKEN_NAME, &gatewayTokenJson);
+    if (gatewayTokenJson == NULL || !json_object_is_type(gatewayTokenJson, json_type_array))
+        return;
 
-            if (gwTokenValue != NULL) {
-                const char* gwToken = json_object_get_string(gwTokenValue);
-                int gwTokenlen = strlen(gwToken);
-                conf->gatewayToken = ssorest_pcalloc(conf->cf_pool, gwTokenlen + 1);
-                memcpy(conf->gatewayToken, (char *) gwToken, gwTokenlen);
-                conf->gatewayToken[gwTokenlen] = '\0';
-                logError(r, "Plugin stored gatwayToken=%s, len=%d", conf->gatewayToken, gwTokenlen);
-            }
-        }
-    }
+    if (!json_object_array_length(gatewayTokenJson))
+        return;
+    
+    json_object *gatewayTokenValue = json_object_array_get_idx(gatewayTokenJson, 0);
+    if (gatewayTokenValue == NULL || !json_object_is_type(gatewayTokenValue, json_type_string))
+        return;
+    
+    const char* gatewayToken = json_object_get_string(gatewayTokenValue);
+    int gatewayTokenLength = strlen(gatewayToken);
+    conf->gatewayToken = ssorest_pcalloc(conf->cf_pool, gatewayTokenLength + 1);
+    memcpy(conf->gatewayToken, (char *) gatewayToken, gatewayTokenLength);
+    conf->gatewayToken[gatewayTokenLength] = '\0';
+    
+    if (conf->isDebugEnabled)
+        logError(r, "Plugin stored gatwayToken=%s, len=%d", conf->gatewayToken, gatewayTokenLength);
 }
 
 #ifdef NGINX

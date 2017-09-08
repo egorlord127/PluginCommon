@@ -344,7 +344,8 @@ void setJsonGatewayRequestAttributes(JSonGatewayRequest* json, const char* key, 
  */
 char* sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest* jsonRequest)
 {
-    // Debug Json Request : TODO: Investigate why Postfields are messed up if json_object_to_json_string_ext is called after json_object_to_json_string 
+    // Debug Json Request
+    // TODO: Investigate why Postfields are messed up if json_object_to_json_string_ext is called after json_object_to_json_string 
     if (conf->isDebugEnabled)
     {
         const char *pretty = json_object_to_json_string_ext(jsonRequest, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
