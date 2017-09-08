@@ -177,87 +177,15 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
     }
 
     // Transfer response cookies
-    if (jsonGatewayResponse->jsonResponseCookies)
+    if (propagateCookies(r, conf, jsonGatewayResponse->jsonResponseCookies, HEADERS_OUT) == SSOREST_OK && conf->isDebugEnabled)
     {
-        json_object_object_foreach(jsonGatewayResponse->jsonResponseCookies, key, jsonVal)
-        {
-            logError(r, "Processing response cookie from JSon: %s", key);
-            if (jsonVal == NULL)
-                continue;
-            
-            json_object *cookieJson = json_object_array_get_idx(jsonVal, 0);
-
-            if (cookieJson == NULL || !json_object_is_type(cookieJson, json_type_array))
-                continue;
-
-            char *cookieVal;
-            const char *name = NULL;
-            const char *value = NULL;
-            const char *path = NULL;
-            const char *domain = NULL;
-            json_object_object_foreach(cookieJson, ckey, cval) {
-                if (strncmp(ckey, "name", sizeof("name") - 1) == 0) {
-                    name = json_object_get_string(cval);
-                }
-                else if (strncmp(ckey, "value", sizeof("value") - 1) == 0) {
-                    value = json_object_get_string(cval);
-                }
-                else if (strncmp(ckey, "path", sizeof("path") - 1) == 0) {
-                    path = json_object_get_string(cval);
-                }
-                else if (strncmp(ckey, "domain", sizeof("domain") - 1) == 0) {
-                    domain = json_object_get_string(cval);
-                }
-            }
-
-            cookieVal = ssorest_pstrcat(r->pool, name, "=", value, "; domain=", domain, "; path=", path);
-            #ifdef APACHE
-                apr_table_addn(r->headers_out, "Set-Cookie", cookieVal);
-            #elif NGINX
-                ngx_table_elt_t *cookie;
-                cookie = ngx_list_push(&r->headers_out.headers);
-                ngx_str_set(&cookie->key, "Set-Cookie");
-                cookie->value.len = strlen(cookieVal);
-                cookie->value.data = (u_char *) cookieVal;
-            #endif
-
-            logError(r, "Transferring header to response %s %s", key, value);
-        }
+        logError(r, "Finished Transferring response cookies to the client");
     }
     
     // Transfer headers
-    if (jsonGatewayResponse->jsonResponseHeader)
+    if (propagateHeader(r, conf, jsonGatewayResponse->jsonResponseHeader, HEADERS_OUT) == SSOREST_OK)
     {
-        json_object_object_foreach(jsonGatewayResponse->jsonResponseHeader, key, jsonVal)
-        {
-            logError(r, "Processing response header from JSon: %s", key);
-            if (strncmp(key, GATEWAY_TOKEN_NAME, strlen(GATEWAY_TOKEN_NAME)) == 0) // skip the gatewayToken
-                continue;
-
-            if (jsonVal == NULL)
-                continue;
-            
-            json_object *jsonValue = json_object_array_get_idx(jsonVal, 0);
-
-            if (jsonValue == NULL || !json_object_is_type(jsonValue, json_type_string))
-                continue;
-
-            char *value = (char *) json_object_get_string(jsonValue);
-            
-            #ifdef APACHE
-                apr_table_set(r->headers_out, key, value);
-            #elif NGINX
-                ngx_table_elt_t *header;
-                header   = ngx_list_push(&r->headers_out.headers);
-
-                header->hash = 1;
-                header->key.len = strlen(key);
-                header->key.data = (u_char *) key;
-                header->value.len = strlen(value);
-                header->value.data = (u_char *) value;
-            #endif
-            logError(r, "Transferring header to response %s %s", key, value);
-        }
+        logError(r, "Finished Transferring response headers to the client");
     }
 
     // Transfer content
@@ -348,71 +276,18 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
         logError(r, "Entering handleAllowContinue");
 
     // Transfer request headers
-    propagateHeader(r, conf, jsonGatewayResponse->jsonRequestHeader, HEADERS_IN);
+    if (propagateHeader(r, conf, jsonGatewayResponse->jsonRequestHeader, HEADERS_OUT) == SSOREST_OK)
+    {
+        logError(r, "Finished Transferring gateway headers to the request");
+    }
     
-
     // Transfer request cookies
     
+
     // Transfer any new cookies to the response
-    if (jsonGatewayResponse->jsonResponseCookies != NULL && json_object_is_type(jsonGatewayResponse->jsonResponseCookies, json_type_array))
+    if (propagateCookies(r, conf, jsonGatewayResponse->jsonResponseCookies, HEADERS_OUT) == SSOREST_OK && conf->isDebugEnabled)
     {
-        if (conf->isDebugEnabled)
-        {
-            const char *pretty = json_object_to_json_string_ext(jsonGatewayResponse->jsonResponseCookies, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
-            logError(r, "Transferring gateway cookie to response:");    
-            if (pretty != NULL)
-                logError(r, "%s", pretty);
-        }
-
-        int arraylen = json_object_array_length(jsonGatewayResponse->jsonResponseCookies);
-        int i;
-        for (i = 0; i < arraylen; i++)
-        {
-            json_object *jsonCookie = json_object_array_get_idx(jsonGatewayResponse->jsonResponseCookies, i);
-            if (jsonCookie == NULL || !json_object_is_type(jsonCookie, json_type_array))
-                continue;
-            if (!json_object_array_length(jsonCookie))
-                continue;
-            json_object_object_foreach(jsonCookie, key, jsonValue) {
-                const char *cname = NULL;
-                const char *cvalue = NULL;
-                const char *cpath = NULL;
-                const char *cdomain = NULL;
-                
-                if (jsonValue == NULL || !json_object_is_type(jsonValue, json_type_string))
-                    continue;
-                const char *value = json_object_get_string(jsonValue);
-                if (strncmp(key, "name", sizeof("name") - 1) == 0) {
-                    cname = value;
-                } else if (strncmp(key, "value", sizeof("value") - 1) == 0) {
-                    cvalue = value;
-                } else if (strncmp(key, "path", sizeof("path") - 1) == 0) {
-                    cpath = value;
-                } else if (strncmp(key, "domain", sizeof("domain") - 1) == 0) {
-                    cdomain = value;
-                }
-
-                if (!cname || !cvalue)
-                    continue;
-
-                if (conf->isDebugEnabled)
-                    logError(r, "Found Response cookie %s=%s", cname, cvalue);
-                
-                char *newCookie = ssorest_pstrcat(r->pool, cname, "=", cvalue, "; domain=", cdomain, "; path=",cpath, NULL);
-
-                if (conf->isDebugEnabled)
-                    logError(r, "Sending gateway cookie to client: %s\n", newCookie);
-
-                #ifdef APACHE
-                    ssorest_table_set(r->headers_out, "Set-Cookie", newCookie);  
-                #elif NGINX
-                    ssorest_table_set(&r->headers_out.headers, "Set-Cookie", newCookie);
-                #endif
-            }
-        }
-    } else {
-        if (conf->isDebugEnabled)
-            logError(r, "Not Found cookies in the gateway response");
+        logError(r, "Finished Transferring response cookies to the client");
     }
 
     if (conf->isDebugEnabled)
@@ -469,12 +344,14 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
         logError(r, "Parsed reply from Gateway:");    
         logError(r, "%s", pretty);
     }
-
-    json_object_object_get_ex(jsonGatewayResponse->json, "response", &jsonGatewayResponse->jsonResponse);
     json_object_object_get_ex(jsonGatewayResponse->json, "request", &jsonGatewayResponse->jsonRequest);
     json_object_object_get_ex(jsonGatewayResponse->jsonRequest, "headers", &jsonGatewayResponse->jsonRequestHeader);
+
+    json_object_object_get_ex(jsonGatewayResponse->json, "response", &jsonGatewayResponse->jsonResponse);
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "body", &jsonGatewayResponse->jsonResponseBody);
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "headers", &jsonGatewayResponse->jsonResponseHeader);
+    json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "cookies", &jsonGatewayResponse->jsonResponseCookies);
+    
     
     json_object *jsonGatewayResponseStatus;
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "status", &jsonGatewayResponseStatus);
@@ -519,24 +396,28 @@ void setGatewayToken(SSORestRequestObject *r, SSORestPluginConfigration *conf, J
         logError(r, "Plugin stored gatwayToken=%s, len=%d", conf->gatewayToken, gatewayTokenLength);
 }
 
-void propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *headers, int dir)
+int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *headers, int dir)
 {
-    if (dir != HEADERS_IN || dir != HEADERS_OUT)
+    if (dir != HEADERS_IN && dir != HEADERS_OUT)
     {
-        logError(r, "Wrong Parameter: only support HEADERS_IN or HEADERS_OUT");
-        return;
+        logError(r, "Wrong Parameter: 'propagateHeader' only support HEADERS_IN or HEADERS_OUT");
+        return SSOREST_WRONG_PARAMETER;
     }
 
-    if (headers == NULL || !json_object_is_type(headers, json_type_array))
+    if (headers == NULL || !json_object_is_type(headers, json_type_object))
     {
         logError(r, "Could not found headers");
-        return;
+        return SSOREST_NOT_FOUND;
     }
     
     if (conf->isDebugEnabled)
     {
         const char *pretty = json_object_to_json_string_ext(headers, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
-        logError(r, "Transferring gateway request headers");    
+        if (dir == HEADERS_OUT)
+            logError(r, "Transferring gateway request headers to client");    
+        else 
+            logError(r, "Transferring gateway request headers to request");
+
         logError(r, "%s", pretty);
     }
 
@@ -559,7 +440,12 @@ void propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, j
             continue;
         
         if (conf->isDebugEnabled)
-            logError(r, "Propagating request header: %s=%s", key, value);
+        {
+            if (dir == HEADERS_OUT)
+                logError(r, "Transferring gateway request header to client: %s=%s", key, value);    
+            else 
+                logError(r, "Transferring gateway request header to request: %s=%s", key, value);    
+        }
 
         #ifdef APAHCE
             if (dir == HEADERS_IN)
@@ -577,6 +463,97 @@ void propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, j
             }
         #endif
     }
+    return SSOREST_OK;
+}
+
+int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *jsonCookies, int dir)
+{
+    if (dir != HEADERS_IN && dir != HEADERS_OUT)
+    {
+        logError(r, "Wrong Parameter: 'propagateCookies' only support HEADERS_IN or HEADERS_OUT");
+        return SSOREST_WRONG_PARAMETER;
+    }
+
+    if (jsonCookies == NULL || !json_object_is_type(jsonCookies, json_type_array))
+    {
+        logError(r, "Could not found gateway cookies");
+        return SSOREST_NOT_FOUND;
+    }
+    
+    if (conf->isDebugEnabled)
+    {
+        const char *pretty = json_object_to_json_string_ext(jsonCookies, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
+        if (dir == HEADERS_IN)
+            logError(r, "Transferring gateway cookies to request");
+        else
+            logError(r, "Transferring gateway cookies to response");
+        
+        logError(r, "%s", pretty);
+    }
+    
+    int arraylen = json_object_array_length(jsonCookies);
+    int i;
+    for (i = 0; i < arraylen; i++)
+    {
+        json_object *jsonCookie = json_object_array_get_idx(jsonCookies, i);
+        if (jsonCookie == NULL || !json_object_is_type(jsonCookie, json_type_array))
+            continue;
+        if (!json_object_array_length(jsonCookie))
+            continue;
+        json_object_object_foreach(jsonCookie, key, jsonValue) {
+            const char *cname = NULL;
+            const char *cvalue = NULL;
+            const char *cpath = NULL;
+            const char *cdomain = NULL;
+            
+            if (jsonValue == NULL || !json_object_is_type(jsonValue, json_type_string))
+                continue;
+            const char *value = json_object_get_string(jsonValue);
+
+            if (strncmp(key, "name", sizeof("name") - 1) == 0) {
+                cname = value;
+            } else if (strncmp(key, "value", sizeof("value") - 1) == 0) {
+                cvalue = value;
+            } else if (strncmp(key, "path", sizeof("path") - 1) == 0) {
+                cpath = value;
+            } else if (strncmp(key, "domain", sizeof("domain") - 1) == 0) {
+                cdomain = value;
+            }
+
+            if (!cname || !cvalue)
+                continue;
+
+            if (conf->isDebugEnabled)
+                logError(r, "Prcessing Gateway Cookie %s=%s", cname, cvalue);
+            
+            char *newCookie = NULL;
+            if (dir ==  HEADERS_OUT)
+            {
+                newCookie = ssorest_pstrcat(r->pool, cname, "=", cvalue, "; domain=", cdomain, "; path=",cpath, NULL);
+                if (conf->isDebugEnabled)
+                    logError(r, "Sending gateway cookie to client: %s\n", newCookie);
+
+                #ifdef APACHE
+                    ssorest_table_set(r->headers_out, "Set-Cookie", newCookie);  
+                #elif NGINX
+                    ssorest_table_set(&r->headers_out.headers, "Set-Cookie", newCookie);
+                #endif
+            }
+            else 
+            {
+                newCookie = ssorest_pstrcat(r->pool, cname, "=", cvalue, "; ", NULL);
+                if (conf->isDebugEnabled)
+                    logError(r, "Sending gateway cookie to request: %s\n", newCookie);
+
+                #ifdef APACHE
+                    ssorest_table_set(r->headers_in, "Cookie", newCookie);  
+                #elif NGINX
+                    ssorest_table_set(&r->headers_in.headers, "Cookie", newCookie);
+                #endif
+            }
+        }
+    }
+    return SSOREST_OK;
 }
 
 #ifdef NGINX

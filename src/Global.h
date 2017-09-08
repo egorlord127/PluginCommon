@@ -64,5 +64,6 @@
 #define SIGNATURE_NEEDED            "Signature Needed"
 #define HEADERS_IN                  1
 #define HEADERS_OUT                 0
-
+#define SSOREST_WRONG_PARAMETER     0
+#define SSOREST_NOT_FOUND           1
 
