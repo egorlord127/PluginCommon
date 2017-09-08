@@ -292,7 +292,10 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
     }
     
     // Transfer request cookies
-    
+    if (propagateCookies(r, conf, jsonGatewayResponse->jsonRequestCookies, HEADERS_IN) == SSOREST_OK)
+    {
+        logError(r, "Finished Transferring gateway cookies to the request");
+    }
 
     // Transfer any new cookies to the response
     if (propagateCookies(r, conf, jsonGatewayResponse->jsonResponseCookies, HEADERS_OUT) == SSOREST_OK && conf->isDebugEnabled)
@@ -356,7 +359,8 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
     }
     json_object_object_get_ex(jsonGatewayResponse->json, "request", &jsonGatewayResponse->jsonRequest);
     json_object_object_get_ex(jsonGatewayResponse->jsonRequest, "headers", &jsonGatewayResponse->jsonRequestHeader);
-
+    json_object_object_get_ex(jsonGatewayResponse->jsonRequest, "cookies", &jsonGatewayResponse->jsonRequestCookies);
+    
     json_object_object_get_ex(jsonGatewayResponse->json, "response", &jsonGatewayResponse->jsonResponse);
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "body", &jsonGatewayResponse->jsonResponseBody);
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "headers", &jsonGatewayResponse->jsonResponseHeader);

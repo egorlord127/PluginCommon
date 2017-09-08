@@ -27,6 +27,7 @@ typedef struct JSonGatewayResponse{
     json_object *json;
     json_object *jsonRequest;
     json_object *jsonRequestHeader;
+    json_object *jsonRequestCookies;
     json_object *jsonResponse;
     json_object *jsonResponseBody;
     json_object *jsonResponseHeader;
