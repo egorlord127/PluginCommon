@@ -286,7 +286,7 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
         logError(r, "Entering handleAllowContinue");
 
     // Transfer request headers
-    if (propagateHeader(r, conf, jsonGatewayResponse->jsonRequestHeader, HEADERS_OUT) == SSOREST_OK)
+    if (propagateHeader(r, conf, jsonGatewayResponse->jsonRequestHeader, HEADERS_IN) == SSOREST_OK)
     {
         logError(r, "Finished Transferring gateway headers to the request");
     }
