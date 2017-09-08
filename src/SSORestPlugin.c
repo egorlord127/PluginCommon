@@ -150,6 +150,11 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
 
     if (jsonGatewayResponse->status == SSOREST_SC_NOT_EXTENDED)
     {
+        if (jsonGatewayResponse->jsonResponseBody == NULL || !json_object_is_type(jsonGatewayResponse->jsonResponseBody, json_type_string))
+        {
+            logError(r, "Could not get string from gateway response body");
+            return SSOREST_INTERNAL_ERROR;
+        }
         const char *bodyContent = json_object_get_string(jsonGatewayResponse->jsonResponseBody);
         char *p = NULL;
         if (bodyContent && conf->isDebugEnabled)
@@ -339,7 +344,8 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
 
 int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse)
 {
-    logError(r, "Entering handleAllowContinue");
+    if (conf->isDebugEnabled)
+        logError(r, "Entering handleAllowContinue");
 
     // Transfer request headers
     if (jsonGatewayResponse->jsonRequestHeader != NULL && json_object_is_type(jsonGatewayResponse->jsonRequestHeader, json_type_array))
@@ -367,6 +373,9 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
             if (value == NULL)
                 continue;
             
+            if (conf->isDebugEnabled)
+                logError(r, "Propagating request header: %s=%s", key, value);
+
             #ifdef APAHCE
                 ssorest_table_set(r->headers_in, key, value);
             #elif NGINX
@@ -374,7 +383,8 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
             #endif
         }
     } else {
-        logError(r, "Not Found headers in the gateway response");
+        if (conf->isDebugEnabled)
+            logError(r, "Not Found headers in the gateway response");
     }
 
     // Transfer request cookies
@@ -391,9 +401,6 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
         }
 
         int arraylen = json_object_array_length(jsonGatewayResponse->jsonResponseCookies);
-        /*testcode*/
-        logError(r, "%d", arraylen);
-        /*testcode*/
         int i;
         for (i = 0; i < arraylen; i++)
         {
@@ -428,6 +435,10 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
                     logError(r, "Found Response cookie %s=%s", cname, cvalue);
                 
                 char *newCookie = ssorest_pstrcat(r->pool, cname, "=", cvalue, "; domain=", cdomain, "; path=",cpath, NULL);
+
+                if (conf->isDebugEnabled)
+                    logError(r, "Sending gateway cookie to client: %s\n", newCookie);
+
                 #ifdef APACHE
                     ssorest_table_set(r->headers_out, "Set-Cookie", newCookie);  
                 #elif NGINX
@@ -436,10 +447,12 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
             }
         }
     } else {
-        logError(r, "Not Found cookies in the gateway response");
+        if (conf->isDebugEnabled)
+            logError(r, "Not Found cookies in the gateway response");
     }
 
-    logError(r, "Exiting handleAllowContinue");
+    if (conf->isDebugEnabled)
+        logError(r, "Exiting handleAllowContinue");
     return SSOREST_OK;
 }
 /**
