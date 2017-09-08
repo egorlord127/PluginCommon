@@ -189,6 +189,10 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
     }
 
     // Transfer content
+    if (transferContent(r, conf, jsonGatewayResponse->jsonResponseBody) == SSOREST_OK)
+    {
+        logError(r, "Finished Transferring content to the client");
+    }
 
     return jsonGatewayResponse->status;
 }
@@ -488,7 +492,7 @@ int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, j
         return SSOREST_WRONG_PARAMETER;
     }
 
-    if (jsonCookies == NULL || !json_object_is_type(jsonCookies, json_type_array))
+    if (jsonCookies == NULL || !json_object_is_type(jsonCookies, json_type_array) || !json_object_array_length(jsonCookies))
     {
         logError(r, "Could not found gateway cookies");
         return SSOREST_NOT_FOUND;
@@ -569,6 +573,73 @@ int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, j
             }
         }
     }
+    return SSOREST_OK;
+}
+
+int transferContent(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *jsonResponseBody)
+{
+    if (jsonResponseBody == NULL || !json_object_is_type(jsonResponseBody, json_type_string))
+    {
+        logError(r, "Could not found gateway response body");
+        return SSOREST_ERROR;
+    }
+
+    const char* body = json_object_get_string(jsonResponseBody);
+    if (body == NULL)
+    {
+        logError(r, "Could not get string from gateway response body");
+        return SSOREST_ERROR;
+    }
+
+    // Base64 Decode first
+    int len = strlen(body);
+    int decoded_len = ((len + 3) / 4) * 3;
+    char *decoded_body = ssorest_pcalloc(r->pool, decoded_len + 1);
+    decoded_len = base64_decode((unsigned char *) body, (unsigned char *) decoded_body, len);
+    decoded_body[decoded_len] = '\0';
+    
+    if (conf->isDebugEnabled)
+        logError(r, "Decoded Response Body from gateway = %s", decoded_body);
+
+    #ifdef APACHE
+        r->clength = decoded_len;
+        ap_send_http_header(r);
+        ap_rprintf(r, "%s", decoded_body);
+    #elif NGINX
+        ngx_buf_t *b;
+        ngx_chain_t *out;
+        r->headers_out.content_length_n = decoded_len;
+        ngx_int_t rc = ngx_http_send_header(r);
+
+        if (rc != NGX_OK) {
+            logError(r, "Problem setting content length header, rc=%s", rc);
+            return rc;
+        }
+
+        b = ngx_calloc_buf(r->pool);
+        if (b == NULL) {
+            return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        } 
+
+        out = ngx_alloc_chain_link(r->pool);
+
+        out->buf = b;
+        out->next = NULL;
+
+        b->start = b->pos = (unsigned char *) decoded_body;
+        b->end = b->last = (unsigned char *) decoded_body + decoded_len;
+        b->memory = 1;
+        b->last_buf = 1;
+
+        rc = ngx_http_output_filter(r, out);
+        if (rc != NGX_OK) {
+            logError(r, "Problem writing response body, rc=%s", rc);
+        }
+        else {
+            logError(r, "Finished writing response body");
+        }
+    #endif
+
     return SSOREST_OK;
 }
 

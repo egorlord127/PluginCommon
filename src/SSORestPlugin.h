@@ -46,3 +46,4 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
 int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse);
 int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *, int dir);
 int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *, int dir);
+int transferContent(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *);
