@@ -270,6 +270,16 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     return processJsonPayload(r, conf, jsonGatewayRequest);
 }
 
+/**
+ * handleAllowContinue
+ * @r:                   The pointer to request object.
+ * @conf:                The pointer to plugin configuration.
+ * @jsonGatewayResponse: The pointer to plugin configuration.
+ *
+ * TODO: Function Details
+ *
+ * Return http status code depending on g/w response.
+ */
 int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse)
 {
     if (conf->isDebugEnabled)
