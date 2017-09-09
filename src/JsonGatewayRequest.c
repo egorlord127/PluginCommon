@@ -4,6 +4,7 @@
 #include "SSORestPlugin.h"
 #include "Util.h"
 #include "RequestInfo.h"
+#include "Logging.h"
 
 static CURL* get_curl_session(SSORestRequestObject* r, SSORestPluginConfigration* conf);
 
@@ -34,7 +35,7 @@ void ssorest_curl_slist_free_all(void *data)
 JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPluginConfigration *conf)
 {
     if (conf->isDebugEnabled)
-        logError(r, "Start Building JsonGateway Request Object.");
+        logDebug(r, "Start Building JsonGateway Request Object.");
     
     JSonGatewayRequest *jsonGatewayRequest = json_object_new_object();
 
@@ -191,7 +192,7 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPlu
                 #endif
                 if (!strncasecmp((char *) cookie_name, ssozone, ssozone_len)) {
                     if (conf->isDebugEnabled)
-                        logError(r, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
+                        logDebug(r, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
                     json_object_object_add(json_cookies, "name", json_object_new_string((const char*) cookie_name));
                     json_object_object_add(json_cookies, "value", json_object_new_string((const char*) cookie_value));
                     json_object_array_add(jsonGatewayRequestCookies, json_cookies);
@@ -200,10 +201,10 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPlu
                 }
             }
             if(!flag && conf->isDebugEnabled)
-                logError(r, "Skipping request cookie outside of our zone: %s", cookie_name);
+                logDebug(r, "Skipping request cookie outside of our zone: %s", cookie_name);
         } else {
             if (conf->isDebugEnabled)
-                logError(r, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
+                logDebug(r, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
             json_object_object_add(json_cookies, "name", json_object_new_string((const char*) cookie_name));
             json_object_object_add(json_cookies, "value", json_object_new_string((const char*) cookie_value));
             json_object_array_add(jsonGatewayRequestCookies, json_cookies); 
@@ -297,7 +298,7 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPlu
     json_object_object_add(jsonGatewayRequest, "attributes", jsonGatewayRequestAttributes);
 
     if (conf->isDebugEnabled)
-        logError(r, "Finished Building JsonGateway Request Object.");
+        logDebug(r, "Finished Building JsonGateway Request Object.");
 
     return jsonGatewayRequest;
 }
@@ -350,7 +351,13 @@ char* sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration*
     {
         const char *pretty = json_object_to_json_string_ext(jsonRequest, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
         logError(r, "Sending JSon request to Gateway:");    
-        logError(r, "%s", pretty);
+        int linenr = 0;
+        char *ptr, *temp = NULL;
+        ptr = strtok_r((char * )pretty, "\n", &temp);
+        while (ptr != NULL) {
+            logDebug(r, "%2d: %s", ++linenr, ptr);
+            ptr = strtok_r(NULL, "\n", &temp);
+        }
     }
 
     CURLcode curl_result_code;

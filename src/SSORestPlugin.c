@@ -2,6 +2,7 @@
 #include "JsonGatewayRequest.h"
 #include "RequestInfo.h"
 #include "Util.h"
+#include "Logging.h"
 
 /**
  * createPluginConfiguration
@@ -53,11 +54,11 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
     if ( conf->isEnabled == 0) 
     {
         if (conf->isDebugEnabled)
-            logError(r, "SSO/Rest Plugin is disabled");
+            logDebug(r, "SSO/Rest Plugin is disabled");
         return SSOREST_DECLINED;
     }
     if (conf->isDebugEnabled)
-        logError(r, "Processing new request:%s", getUrl(r));
+        logDebug(r, "Processing new request:%s", getUrl(r));
 
     /* 1.Check if the request uri matches with ignored extension */
     const char *requestExt = getRequestFileExtension(r);
@@ -71,7 +72,7 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
         #endif
         if (strcmp(s, requestExt) == 0) {
             if (conf->isDebugEnabled)
-                logError(r, "Ignore Extension Matched");
+                logDebug(r, "Ignore Extension Matched");
             return SSOREST_DECLINED;
         }
     }
@@ -87,14 +88,14 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
         #endif
         if (strstr(uri, ignoreuri)) {
             if (conf->isDebugEnabled)
-                logError(r, "Ignore Url Matched");
+                logDebug(r, "Ignore Url Matched");
             return SSOREST_DECLINED;
         }
     }
 
     int ret = processJsonPayload(r, conf, NULL);
     if (conf->isDebugEnabled)
-        logError(r, "Request to Gateway had result code: %d", ret);
+        logDebug(r, "Request to Gateway had result code: %d", ret);
     return ret;
 }
 
@@ -164,7 +165,7 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
         if (p)
         {
             if (conf->isDebugEnabled)
-                logError(r, "Signature is required for further talking");
+                logDebug(r, "Signature is required for further talking");
             return handleSignatureRequired(r, conf, jsonGatewayRequest, jsonGatewayResponse);
         }
         else 
@@ -181,19 +182,19 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
     // Transfer response cookies
     if (propagateCookies(r, conf, jsonGatewayResponse->jsonResponseCookies, HEADERS_OUT) == SSOREST_OK && conf->isDebugEnabled)
     {
-        logError(r, "Finished Transferring response cookies to the client");
+        logDebug(r, "Finished Transferring response cookies to the client");
     }
     
     // Transfer headers
     if (propagateHeader(r, conf, jsonGatewayResponse->jsonResponseHeader, HEADERS_OUT) == SSOREST_OK)
     {
-        logError(r, "Finished Transferring response headers to the client");
+        logDebug(r, "Finished Transferring response headers to the client");
     }
 
     // Transfer content
     if (transferContent(r, conf, jsonGatewayResponse->jsonResponseBody) == SSOREST_OK)
     {
-        logError(r, "Finished Transferring content to the client");
+        logDebug(r, "Finished Transferring content to the client");
     }
 
     return jsonGatewayResponse->status;
@@ -241,7 +242,7 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     if (isChallengeModel)
     {
         if (conf->isDebugEnabled)
-            logError(r, "Gateway support new challenge model");
+            logDebug(r, "Gateway support new challenge model");
         
         const char *digest = computeRFC2104HMAC(r, challengeValue, conf->secretKey);
         if (challengeValue == NULL || digest == NULL)
@@ -255,7 +256,7 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     else 
     {
         if (conf->isDebugEnabled)
-            logError(r, "Gateway does not support new challenge model");
+            logDebug(r, "Gateway does not support new challenge model");
         
         char randomText[33];
         generateSecureRandomString(randomText, 32);
@@ -285,28 +286,28 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
 int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse)
 {
     if (conf->isDebugEnabled)
-        logError(r, "Entering handleAllowContinue");
+        logDebug(r, "Entering handleAllowContinue");
 
     // Transfer request headers
-    if (propagateHeader(r, conf, jsonGatewayResponse->jsonRequestHeader, HEADERS_IN) == SSOREST_OK)
+    if (propagateHeader(r, conf, jsonGatewayResponse->jsonRequestHeader, HEADERS_IN) == SSOREST_OK && conf->isDebugEnabled)
     {
-        logError(r, "Finished Transferring gateway headers to the request");
+        logDebug(r, "Finished Transferring gateway headers to the request");
     }
     
     // Transfer request cookies
-    if (propagateCookies(r, conf, jsonGatewayResponse->jsonRequestCookies, HEADERS_IN) == SSOREST_OK)
+    if (propagateCookies(r, conf, jsonGatewayResponse->jsonRequestCookies, HEADERS_IN) == SSOREST_OK && conf->isDebugEnabled)
     {
-        logError(r, "Finished Transferring gateway cookies to the request");
+        logDebug(r, "Finished Transferring gateway cookies to the request");
     }
 
     // Transfer any new cookies to the response
     if (propagateCookies(r, conf, jsonGatewayResponse->jsonResponseCookies, HEADERS_OUT) == SSOREST_OK && conf->isDebugEnabled)
     {
-        logError(r, "Finished Transferring response cookies to the client");
+        logDebug(r, "Finished Transferring response cookies to the client");
     }
 
     if (conf->isDebugEnabled)
-        logError(r, "Exiting handleAllowContinue");
+        logDebug(r, "Exiting handleAllowContinue");
     return SSOREST_OK;
 }
 /**
@@ -341,8 +342,8 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
     // Debug Raw gateway response
     if (conf->isDebugEnabled)
     {
-        logError(r, "Received raw gateway response:");
-        logError(r, "%s", jsonString);
+        logDebug(r, "Received raw gateway response:");
+        logDebug(r, "%s", jsonString);
     }
         
     enum json_tokener_error jerr = json_tokener_success;
@@ -356,8 +357,14 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
     if (conf->isDebugEnabled)
     {
         const char *pretty = json_object_to_json_string_ext(jsonGatewayResponse->json, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
-        logError(r, "Parsed reply from Gateway:");    
-        logError(r, "%s", pretty);
+        logDebug(r, "Parsed reply from Gateway:");    
+        int linenr = 0;
+        char *ptr, *temp = NULL;
+        ptr = strtok_r((char * )pretty, "\n", &temp);
+        while (ptr != NULL) {
+            logDebug(r, "%2d: %s", ++linenr, ptr);
+            ptr = strtok_r(NULL, "\n", &temp);
+        }
     }
     json_object_object_get_ex(jsonGatewayResponse->json, "request", &jsonGatewayResponse->jsonRequest);
     json_object_object_get_ex(jsonGatewayResponse->jsonRequest, "headers", &jsonGatewayResponse->jsonRequestHeader);
@@ -409,7 +416,7 @@ void setGatewayToken(SSORestRequestObject *r, SSORestPluginConfigration *conf, J
     conf->gatewayToken[gatewayTokenLength] = '\0';
     
     if (conf->isDebugEnabled)
-        logError(r, "Plugin stored gatwayToken=%s, len=%d", conf->gatewayToken, gatewayTokenLength);
+        logDebug(r, "Plugin stored gatwayToken=%s, len=%d", conf->gatewayToken, gatewayTokenLength);
 }
 
 int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *headers, int dir)
@@ -430,11 +437,11 @@ int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
     {
         const char *pretty = json_object_to_json_string_ext(headers, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
         if (dir == HEADERS_OUT)
-            logError(r, "Transferring gateway request headers to client");    
+            logDebug(r, "Transferring gateway request headers to client");    
         else 
-            logError(r, "Transferring gateway request headers to request");
+            logDebug(r, "Transferring gateway request headers to request");
 
-        logError(r, "%s", pretty);
+            logDebug(r, "%s", pretty);
     }
 
     json_object_object_foreach(headers, key, jsonVal) {
@@ -467,7 +474,7 @@ int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
             #endif
             if (strcasecmp(s, key) == 0) {
                 if (conf->isDebugEnabled)
-                    logError(r, "Skipping '%s' header", key);
+                    logDebug(r, "Skipping '%s' header", key);
                 skip_header = 1;
                 break;
             }
@@ -479,9 +486,9 @@ int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
         if (conf->isDebugEnabled)
         {
             if (dir == HEADERS_OUT)
-                logError(r, "Transferring gateway request header to client: %s=%s", key, value);    
+                logDebug(r, "Transferring gateway request header to client: %s=%s", key, value);    
             else 
-                logError(r, "Transferring gateway request header to request: %s=%s", key, value);    
+                logDebug(r, "Transferring gateway request header to request: %s=%s", key, value);    
         }
 
         #ifdef APAHCE
@@ -521,11 +528,11 @@ int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, j
     {
         const char *pretty = json_object_to_json_string_ext(jsonCookies, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
         if (dir == HEADERS_IN)
-            logError(r, "Transferring gateway cookies to request");
+            logDebug(r, "Transferring gateway cookies to request");
         else
-            logError(r, "Transferring gateway cookies to response");
+            logDebug(r, "Transferring gateway cookies to response");
         
-        logError(r, "%s", pretty);
+        logDebug(r, "%s", pretty);
     }
     
     int arraylen = json_object_array_length(jsonCookies);
@@ -561,14 +568,14 @@ int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, j
                 continue;
 
             if (conf->isDebugEnabled)
-                logError(r, "Prcessing Gateway Cookie %s=%s", cname, cvalue);
+                logDebug(r, "Prcessing Gateway Cookie %s=%s", cname, cvalue);
             
             char *newCookie = NULL;
             if (dir ==  HEADERS_OUT)
             {
                 newCookie = ssorest_pstrcat(r->pool, cname, "=", cvalue, "; domain=", cdomain, "; path=",cpath, NULL);
                 if (conf->isDebugEnabled)
-                    logError(r, "Sending gateway cookie to client: %s\n", newCookie);
+                    logDebug(r, "Sending gateway cookie to client: %s\n", newCookie);
 
                 #ifdef APACHE
                     ssorest_table_set(r->headers_out, "Set-Cookie", newCookie);  
@@ -582,7 +589,7 @@ int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, j
                 const char *cookiestring = getCookies(r);
                 newCookie = ssorest_pstrcat(r->pool, cname, "=", cvalue, "; ", cookiestring, NULL);
                 if (conf->isDebugEnabled)
-                    logError(r, "Sending gateway cookie to request: %s\n", newCookie);
+                    logDebug(r, "Sending gateway cookie to request: %s\n", newCookie);
 
                 #ifdef APACHE
                     ssorest_table_set(r->headers_in, "Cookie", newCookie);  
@@ -599,7 +606,7 @@ int transferContent(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
 {
     if (jsonResponseBody == NULL || !json_object_is_type(jsonResponseBody, json_type_string))
     {
-        logError(r, "Could not found gateway response body");
+        logDebug(r, "Could not found gateway response body");
         return SSOREST_ERROR;
     }
 
@@ -618,7 +625,7 @@ int transferContent(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
     decoded_body[decoded_len] = '\0';
     
     if (conf->isDebugEnabled)
-        logError(r, "Decoded Response Body from gateway = %s", decoded_body);
+        logDebug(r, "Decoded Response Body from gateway = %s", decoded_body);
 
     #ifdef APACHE
         r->clength = decoded_len;

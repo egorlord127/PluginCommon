@@ -1,5 +1,6 @@
 #include "RequestInfo.h"
 #include "Util.h"
+#include "Logging.h"
 const char* getMethod(SSORestRequestObject* r)
 {
     const char *rv = ""; 

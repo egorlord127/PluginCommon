@@ -1,4 +1,5 @@
 #include "Util.h"
+#include "Logging.h"
 #include <string.h>
 #include <openssl/hmac.h>
 
