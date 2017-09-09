@@ -18,6 +18,7 @@ static char *setSSORestSecretKey(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestSSOZone(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestIgnoreExt(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestIgnoreUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
+static char *setSSORestIgnoreHeaders(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 
 static ngx_command_t moduleDirectives[] = {
         {
@@ -120,6 +121,14 @@ static ngx_command_t moduleDirectives[] = {
         ngx_string("SSORestIgnoreUrl"),
         NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_CONF_ANY,
                 setSSORestIgnoreUrl,
+                NGX_HTTP_SRV_CONF_OFFSET,
+                0,
+                NULL
+        },
+        {
+        ngx_string("SSORestIgnoreHeaders"),
+        NGX_HTTP_MAIN_CONF | NGX_HTTP_SRV_CONF | NGX_CONF_ANY,
+                setSSORestIgnoreHeaders,
                 NGX_HTTP_SRV_CONF_OFFSET,
                 0,
                 NULL
@@ -305,7 +314,22 @@ static char *setSSORestIgnoreUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
     }
     return NGX_CONF_OK;
 }
+static char *setSSORestIgnoreHeaders(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
+{
+    SSORestPluginConfigration *conf = cfg;
+    ngx_str_t *value;
+    ngx_str_t *ignore;
+    ngx_uint_t i;
 
+    value = cf->args->elts;
+    for (i = 1; i < cf->args->nelts; i++) {
+        ignore = ngx_array_push(conf->ignoreHeaders);
+        if (ignore == NULL)
+            return NGX_CONF_ERROR ;
+        *ignore = value[i];
+    }
+    return NGX_CONF_OK;
+}
 /**
  * Initializes the SSO/Rest Plugin
  */

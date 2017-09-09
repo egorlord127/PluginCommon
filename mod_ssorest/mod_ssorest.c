@@ -18,6 +18,7 @@ static const char *setSSORestSecretKey(cmd_parms *parms, void *cfg, const char *
 static const char *setSSORestSSOZone(cmd_parms *parms, void *cfg, const char *arg);
 static const char *setSSORestIgnoreExt(cmd_parms *parms, void *cfg, const char *arg);
 static const char *setSSORestIgnoreUrl(cmd_parms *parms, void *cfg, const char *arg);
+static const char *setSSORestIgnoreHeaders(cmd_parms *parms, void *cfg, const char *arg);
 
 static const command_rec moduleDirectives[] = 
 {
@@ -34,6 +35,7 @@ static const command_rec moduleDirectives[] =
     AP_INIT_ITERATE("SSORestSSOZone", setSSORestSSOZone, NULL, OR_ALL, ""),
     AP_INIT_ITERATE("SSORestIgnoreExt", setSSORestIgnoreExt, NULL, OR_ALL, ""),
     AP_INIT_ITERATE("SSORestIgnoreUrl", setSSORestIgnoreUrl, NULL, OR_ALL, ""),
+    AP_INIT_ITERATE("SSORestIgnoreHeaders", setSSORestIgnoreHeaders, NULL, OR_ALL, ""),
     {NULL}
 };
 
@@ -140,7 +142,12 @@ static const char *setSSORestIgnoreUrl(cmd_parms *parms, void *cfg, const char *
     *(const char**)apr_array_push(conf->ignoreUrl) = arg;
     return NULL;
 }
-
+static const char *setSSORestIgnoreHeaders(cmd_parms *parms, void *cfg, const char *arg)
+{
+    SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
+    *(const char**)apr_array_push(conf->ignoreHeaders) = arg;
+    return NULL;
+}
 static int process(request_rec *r)
 {
     SSORestPluginConfigration *conf = ap_get_module_config(r->server->module_config, &ssorest_module);

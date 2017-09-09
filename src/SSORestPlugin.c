@@ -28,10 +28,12 @@ SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
         conf->ssoZone            = ssorest_array_create(pool, 1, sizeof(const char *));
         conf->ignoreExt          = ssorest_array_create(pool, 1, sizeof(const char *));
         conf->ignoreUrl          = ssorest_array_create(pool, 1, sizeof(const char *));
+        conf->ignoreHeaders      = ssorest_array_create(pool, 1, sizeof(const char *));
     #elif NGINX
         conf->ssoZone            = ssorest_array_create(pool, 1, sizeof(ngx_str_t));
         conf->ignoreExt          = ssorest_array_create(pool, 1, sizeof(ngx_str_t));
         conf->ignoreUrl          = ssorest_array_create(pool, 1, sizeof(ngx_str_t));
+        conf->ignoreHeaders      = ssorest_array_create(pool, 1, sizeof(ngx_str_t));
     #endif
     conf->cf_pool = pool;
     return conf;
@@ -453,6 +455,27 @@ int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
         if (value == NULL)
             continue;
         
+        // Ignore headers
+        UINT i;
+        int skip_header = 0;
+        for (i = 0; i < conf->ignoreHeaders->nelts; i++ )
+        {
+            #ifdef APACHE
+                const char *s = ((const char**)conf->ignoreHeaders->elts)[i];
+            #elif NGINX
+                const char *s = toStringSafety(r->pool, ((ngx_str_t *)conf->ignoreHeaders->elts)[i].data, ((ngx_str_t *)conf->ignoreHeaders->elts)[i].len);
+            #endif
+            if (strcasecmp(s, key) == 0) {
+                if (conf->isDebugEnabled)
+                    logError(r, "Skipping '%s' header", key);
+                skip_header = 1;
+                break;
+            }
+        }
+
+        if (skip_header == 1)
+            continue;
+
         if (conf->isDebugEnabled)
         {
             if (dir == HEADERS_OUT)

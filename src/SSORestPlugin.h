@@ -19,6 +19,7 @@ typedef struct
     ssorest_array_t *ssoZone;
     ssorest_array_t *ignoreExt;
     ssorest_array_t *ignoreUrl;
+    ssorest_array_t *ignoreHeaders;
     CURL *curl_session;
     SSORestPluginPool *cf_pool;
 } SSORestPluginConfigration;
