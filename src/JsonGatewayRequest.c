@@ -1,3 +1,9 @@
+/**
+ * @file   JsonGatewayRequest.c
+ * @author Egor Lord <elord@idfconnect.com>
+ *
+ */
+ 
 #include "Global.h"
 #include "JsonGatewayRequest.h"
 #include "CurlWrapper.h"

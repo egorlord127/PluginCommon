@@ -1,3 +1,9 @@
+/**
+ * @file   Global.h
+ * @author Egor Lord <elord@idfconnect.com>
+ *
+ */
+ 
 #pragma once
 #ifdef APACHE
     #include <httpd.h>

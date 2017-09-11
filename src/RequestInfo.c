@@ -1,3 +1,8 @@
+/**
+ * @file   RequestInfo.c
+ * @author Egor Lord <elord@idfconnect.com>
+ *
+ */
 #include "RequestInfo.h"
 #include "Util.h"
 #include "Logging.h"

@@ -1,3 +1,9 @@
+/**
+ * @file   ngx_ssorest.c
+ * @author Egor Lord <elord@idfconnect.com>
+ *
+ */
+
 #include "Global.h"
 #include "SSORestPlugin.h"
 

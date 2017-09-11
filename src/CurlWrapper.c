@@ -1,3 +1,9 @@
+/**
+ * @file   CurlWrapper.c
+ * @author Egor Lord <elord@idfconnect.com>
+ *
+ */
+
 #include "CurlWrapper.h"
 #include "Logging.h"
 #ifndef max

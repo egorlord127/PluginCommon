@@ -1,3 +1,9 @@
+/**
+ * @file   SSORestPlugin.c
+ * @author Egor Lord <elord@idfconnect.com>
+ *
+ */
+
 #include "SSORestPlugin.h"
 #include "JsonGatewayRequest.h"
 #include "RequestInfo.h"

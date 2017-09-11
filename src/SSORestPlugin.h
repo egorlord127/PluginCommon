@@ -1,3 +1,9 @@
+/**
+ * @file   SSORestPlugin.h
+ * @author Egor Lord <elord@idfconnect.com>
+ *
+ */
+
 #pragma once
 #include "Global.h"
 // #include "JsonGatewayResponse.h"

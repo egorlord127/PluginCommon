@@ -1,3 +1,9 @@
+/**
+ * @file   Logging.c
+ * @author Egor Lord <elord@idfconnect.com>
+ *
+ */
+
 #include "Logging.h"
 
 #ifdef NGINX

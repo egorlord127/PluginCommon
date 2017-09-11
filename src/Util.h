@@ -1,3 +1,9 @@
+/**
+ * @file   Util.h
+ * @author Egor Lord <elord@idfconnect.com>
+ *
+ */
+
 #include "Global.h"
 #define SHA1_DIGESTLENGTH 20
 

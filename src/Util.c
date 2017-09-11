@@ -1,3 +1,9 @@
+/**
+ * @file   Util.c
+ * @author Egor Lord <elord@idfconnect.com>
+ *
+ */
+
 #include "Util.h"
 #include "Logging.h"
 #include <string.h>

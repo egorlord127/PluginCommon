@@ -1,3 +1,9 @@
+/**
+ * @file   RequestInfo.h
+ * @author Egor Lord <elord@idfconnect.com>
+ *
+ */
+ 
 #include "Global.h"
 #include "SSORestPlugin.h"
 const char*         getMethod(SSORestRequestObject*);

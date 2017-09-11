@@ -1,3 +1,9 @@
+/**
+ * @file   CurlWrapper.h
+ * @author Egor Lord <elord@idfconnect.com>
+ *
+ */
+
 #include "Global.h"
 #include <curl/curl.h>
 
