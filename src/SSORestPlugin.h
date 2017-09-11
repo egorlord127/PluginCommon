@@ -6,7 +6,6 @@
 
 #pragma once
 #include "Global.h"
-// #include "JsonGatewayResponse.h"
 #include <json-c/json.h>
 #include <curl/curl.h>
 typedef struct 
@@ -44,7 +43,16 @@ typedef struct JSonGatewayResponse{
 
 typedef json_object JSonGatewayRequest;
 
-SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool*);
+#define SSOREST_CONF_UNSET      -1
+#define SSOREST_CONF_ENABLED     1
+#define SSOREST_CONF_DISABLED    0
+
+SSORestPluginConfigration *createPluginConfiguration(SSORestPluginPool*);
+#ifdef APACHE
+SSORestPluginConfigration *mergePluginConfiguration(SSORestPluginPool*);
+#elif NGINX
+char *mergePluginConfiguration(void *, void *);
+#endif
 int processRequest(SSORestRequestObject *request, SSORestPluginConfigration *conf);
 int processJsonPayload(SSORestRequestObject *request, SSORestPluginConfigration *conf, JSonGatewayRequest *jsonGatewayRequest);
 void setGatewayToken(SSORestRequestObject *request, SSORestPluginConfigration *conf, JSonGatewayResponse *res);

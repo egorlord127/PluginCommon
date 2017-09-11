@@ -40,7 +40,7 @@ void ssorest_curl_slist_free_all(void *data)
  */
 JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPluginConfigration *conf)
 {
-    if (conf->isDebugEnabled)
+    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
         logDebug(r, "Start Building JsonGateway Request Object.");
     
     JSonGatewayRequest *jsonGatewayRequest = json_object_new_object();
@@ -197,7 +197,7 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPlu
                     UINT ssozone_len = ((ngx_str_t *)conf->ssoZone->elts)[i].len;
                 #endif
                 if (!strncasecmp((char *) cookie_name, ssozone, ssozone_len)) {
-                    if (conf->isDebugEnabled)
+                    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
                         logDebug(r, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
                     json_object_object_add(json_cookies, "name", json_object_new_string((const char*) cookie_name));
                     json_object_object_add(json_cookies, "value", json_object_new_string((const char*) cookie_value));
@@ -209,7 +209,7 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPlu
             if(!flag && conf->isDebugEnabled)
                 logDebug(r, "Skipping request cookie outside of our zone: %s", cookie_name);
         } else {
-            if (conf->isDebugEnabled)
+            if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
                 logDebug(r, "Transferring request cookie to JSon payload: %s=%s", cookie_name, cookie_value);
             json_object_object_add(json_cookies, "name", json_object_new_string((const char*) cookie_name));
             json_object_object_add(json_cookies, "value", json_object_new_string((const char*) cookie_value));
@@ -303,7 +303,7 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPlu
 
     json_object_object_add(jsonGatewayRequest, "attributes", jsonGatewayRequestAttributes);
 
-    if (conf->isDebugEnabled)
+    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
         logDebug(r, "Finished Building JsonGateway Request Object.");
 
     return jsonGatewayRequest;
@@ -353,7 +353,7 @@ char* sendJsonGatewayRequest(SSORestRequestObject* r, SSORestPluginConfigration*
 {
     // Debug Json Request
     // TODO: Investigate why Postfields are messed up if json_object_to_json_string_ext is called after json_object_to_json_string 
-    if (conf->isDebugEnabled)
+    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
     {
         const char *pretty = json_object_to_json_string_ext(jsonRequest, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
         logError(r, "Sending JSon request to Gateway:");    

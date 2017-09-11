@@ -20,11 +20,11 @@ SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
 {
     SSORestPluginConfigration * conf = ssorest_pcalloc(pool, sizeof(SSORestPluginConfigration));
 
-    conf->isEnabled              = 0;
-    conf->isTraceEnabled         = 0;
-    conf->useServerNameAsDefault = 0;
-    conf->sendFormParameters     = 0;
-    conf->isDebugEnabled         = 0;
+    conf->isEnabled              = SSOREST_CONF_UNSET;
+    conf->isTraceEnabled         = SSOREST_CONF_UNSET;
+    conf->useServerNameAsDefault = SSOREST_CONF_UNSET;
+    conf->sendFormParameters     = SSOREST_CONF_UNSET;
+    conf->isDebugEnabled         = SSOREST_CONF_UNSET;
     conf->acoName                = NULL;
     conf->gatewayUrl             = NULL;
     conf->localrootpath          = NULL;
@@ -36,16 +36,74 @@ SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
         conf->ignoreExt          = ssorest_array_create(pool, 1, sizeof(const char *));
         conf->ignoreUrl          = ssorest_array_create(pool, 1, sizeof(const char *));
         conf->ignoreHeaders      = ssorest_array_create(pool, 1, sizeof(const char *));
-    #elif NGINX
-        conf->ssoZone            = ssorest_array_create(pool, 1, sizeof(ngx_str_t));
-        conf->ignoreExt          = ssorest_array_create(pool, 1, sizeof(ngx_str_t));
-        conf->ignoreUrl          = ssorest_array_create(pool, 1, sizeof(ngx_str_t));
-        conf->ignoreHeaders      = ssorest_array_create(pool, 1, sizeof(ngx_str_t));
     #endif
     conf->cf_pool = pool;
     return conf;
 }
 
+#ifdef APACHE
+SSORestPluginConfigration *mergePluginConfiguration(SSORestPluginPool*)
+#elif NGINX
+char *mergePluginConfiguration(void *parent, void *child)
+#endif
+{
+    SSORestPluginConfigration *prev = parent;
+    SSORestPluginConfigration *conf = child;
+
+    if (conf->isEnabled == SSOREST_CONF_UNSET)
+    {
+        conf->isEnabled = (prev->isEnabled == SSOREST_CONF_UNSET) ? 0 : prev->isEnabled;
+    }
+    if (conf->isTraceEnabled == SSOREST_CONF_UNSET)
+    {
+        conf->isTraceEnabled = (prev->isTraceEnabled == SSOREST_CONF_UNSET) ? 0 : prev->isTraceEnabled;
+    }
+    if (conf->useServerNameAsDefault == SSOREST_CONF_UNSET)
+    {
+        conf->useServerNameAsDefault = (prev->useServerNameAsDefault == SSOREST_CONF_UNSET) ? 0 : prev->useServerNameAsDefault;
+    }
+    if (conf->isDebugEnabled == SSOREST_CONF_UNSET)
+    {
+        conf->isDebugEnabled = (prev->isDebugEnabled == SSOREST_CONF_UNSET) ? 0 : prev->isDebugEnabled;
+    }
+    if (conf->acoName == NULL)
+    {
+        conf->acoName = (prev->acoName == NULL) ? NULL : prev->gatewayUrl;
+    }
+    if (conf->gatewayUrl == NULL)
+    {
+        conf->gatewayUrl = (prev->gatewayUrl == NULL) ? NULL : prev->gatewayUrl;
+    }
+    if (conf->localrootpath == NULL)
+    {
+        conf->localrootpath = (prev->localrootpath == NULL) ? NULL : prev->localrootpath;
+    }
+    if (conf->pluginId == NULL)
+    {
+        conf->pluginId = (prev->pluginId == NULL) ? NULL : prev->pluginId;
+    }
+    if (conf->secretKey == NULL)
+    {
+        conf->secretKey = (prev->secretKey == NULL) ? NULL : prev->secretKey;
+    }
+    if (conf->ssoZone == NULL)
+    {
+        conf->ssoZone = (prev->ssoZone == NULL) ? NULL : prev->ssoZone;
+    }
+    if (conf->ignoreExt == NULL)
+    {
+        conf->ignoreExt = (prev->ignoreExt == NULL) ? NULL : prev->ignoreExt;
+    }
+    if (conf->ignoreUrl == NULL)
+    {
+        conf->ignoreUrl = (prev->ignoreUrl == NULL) ? NULL : prev->ignoreUrl;
+    }
+    if (conf->ignoreHeaders == NULL)
+    {
+        conf->ignoreHeaders = (prev->ignoreHeaders == NULL) ? NULL : prev->ignoreHeaders;
+    }
+    return NULL;
+}
 /**
  * processRequest
  * @r:           The pointer to request object.
@@ -57,13 +115,13 @@ SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
  */
 int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
 {
-    if ( conf->isEnabled == 0) 
+    if ( conf->isEnabled == SSOREST_CONF_DISABLED || conf->isEnabled == SSOREST_CONF_UNSET) 
     {
-        if (conf->isDebugEnabled)
+        if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
             logDebug(r, "SSO/Rest Plugin is disabled");
         return SSOREST_DECLINED;
     }
-    if (conf->isDebugEnabled)
+    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
         logDebug(r, "Processing new request:%s", getUrl(r));
 
     /* 1.Check if the request uri matches with ignored extension */
@@ -77,7 +135,7 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
             const char *s = (const char *) ((ngx_str_t *)conf->ignoreExt->elts)[i].data;
         #endif
         if (strcmp(s, requestExt) == 0) {
-            if (conf->isDebugEnabled)
+            if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
                 logDebug(r, "Ignore Extension Matched");
             return SSOREST_DECLINED;
         }
@@ -93,14 +151,18 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
             const char *ignoreuri = (const char *) ((ngx_str_t *)conf->ignoreUrl->elts)[i].data;
         #endif
         if (strstr(uri, ignoreuri)) {
-            if (conf->isDebugEnabled)
+            if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
                 logDebug(r, "Ignore Url Matched");
             return SSOREST_DECLINED;
         }
     }
-
+    if (conf->gatewayUrl == NULL)
+    {
+        logError(r, "No SSORestGatewayUrl in configuration");
+        return SSOREST_INTERNAL_ERROR;
+    }
     int ret = processJsonPayload(r, conf, NULL);
-    if (conf->isDebugEnabled)
+    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
         logDebug(r, "Request to Gateway had result code: %d", ret);
     return ret;
 }
@@ -170,7 +232,7 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
             p = strstr(bodyContent, "Signature Needed");
         if (p)
         {
-            if (conf->isDebugEnabled)
+            if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
                 logDebug(r, "Signature is required for further talking");
             return handleSignatureRequired(r, conf, jsonGatewayRequest, jsonGatewayResponse);
         }
@@ -247,7 +309,7 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     }
     if (isChallengeModel)
     {
-        if (conf->isDebugEnabled)
+        if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
             logDebug(r, "Gateway support new challenge model");
         
         const char *digest = computeRFC2104HMAC(r, challengeValue, conf->secretKey);
@@ -261,7 +323,7 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     }
     else 
     {
-        if (conf->isDebugEnabled)
+        if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
             logDebug(r, "Gateway does not support new challenge model");
         
         char randomText[33];
@@ -291,7 +353,7 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
  */
 int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse)
 {
-    if (conf->isDebugEnabled)
+    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
         logDebug(r, "Entering handleAllowContinue");
 
     // Transfer request headers
@@ -312,7 +374,7 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
         logDebug(r, "Finished Transferring response cookies to the client");
     }
 
-    if (conf->isDebugEnabled)
+    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
         logDebug(r, "Exiting handleAllowContinue");
     return SSOREST_OK;
 }
@@ -346,7 +408,7 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
     }
 
     // Debug Raw gateway response
-    if (conf->isDebugEnabled)
+    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
     {
         logDebug(r, "Received raw gateway response:");
         logDebug(r, "%s", jsonString);
@@ -360,7 +422,7 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
     }
 
     // Debug Json Response
-    if (conf->isDebugEnabled)
+    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
     {
         const char *pretty = json_object_to_json_string_ext(jsonGatewayResponse->json, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
         logDebug(r, "Parsed reply from Gateway:");    
@@ -421,7 +483,7 @@ void setGatewayToken(SSORestRequestObject *r, SSORestPluginConfigration *conf, J
     memcpy(conf->gatewayToken, (char *) gatewayToken, gatewayTokenLength);
     conf->gatewayToken[gatewayTokenLength] = '\0';
     
-    if (conf->isDebugEnabled)
+    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
         logDebug(r, "Plugin stored gatwayToken=%s, len=%d", conf->gatewayToken, gatewayTokenLength);
 }
 
@@ -439,7 +501,7 @@ int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
         return SSOREST_NOT_FOUND;
     }
     
-    if (conf->isDebugEnabled)
+    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
     {
         const char *pretty = json_object_to_json_string_ext(headers, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
         if (dir == HEADERS_OUT)
@@ -479,7 +541,7 @@ int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
                 const char *s = toStringSafety(r->pool, ((ngx_str_t *)conf->ignoreHeaders->elts)[i].data, ((ngx_str_t *)conf->ignoreHeaders->elts)[i].len);
             #endif
             if (strcasecmp(s, key) == 0) {
-                if (conf->isDebugEnabled)
+                if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
                     logDebug(r, "Skipping '%s' header", key);
                 skip_header = 1;
                 break;
@@ -489,7 +551,7 @@ int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
         if (skip_header == 1)
             continue;
 
-        if (conf->isDebugEnabled)
+        if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
         {
             if (dir == HEADERS_OUT)
                 logDebug(r, "Transferring gateway request header to client: %s=%s", key, value);    
@@ -530,7 +592,7 @@ int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, j
         return SSOREST_NOT_FOUND;
     }
     
-    if (conf->isDebugEnabled)
+    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
     {
         const char *pretty = json_object_to_json_string_ext(jsonCookies, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED);
         if (dir == HEADERS_IN)
@@ -573,14 +635,14 @@ int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, j
             if (!cname || !cvalue)
                 continue;
 
-            if (conf->isDebugEnabled)
+            if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
                 logDebug(r, "Prcessing Gateway Cookie %s=%s", cname, cvalue);
             
             char *newCookie = NULL;
             if (dir ==  HEADERS_OUT)
             {
                 newCookie = ssorest_pstrcat(r->pool, cname, "=", cvalue, "; domain=", cdomain, "; path=",cpath, NULL);
-                if (conf->isDebugEnabled)
+                if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
                     logDebug(r, "Sending gateway cookie to client: %s\n", newCookie);
 
                 #ifdef APACHE
@@ -594,7 +656,7 @@ int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, j
                 // Get existing cookie first
                 const char *cookiestring = getCookies(r);
                 newCookie = ssorest_pstrcat(r->pool, cname, "=", cvalue, "; ", cookiestring, NULL);
-                if (conf->isDebugEnabled)
+                if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
                     logDebug(r, "Sending gateway cookie to request: %s\n", newCookie);
 
                 #ifdef APACHE
@@ -630,7 +692,7 @@ int transferContent(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
     decoded_len = base64_decode((unsigned char *) body, (unsigned char *) decoded_body, len);
     decoded_body[decoded_len] = '\0';
     
-    if (conf->isDebugEnabled)
+    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
         logDebug(r, "Decoded Response Body from gateway = %s", decoded_body);
 
     #ifdef APACHE

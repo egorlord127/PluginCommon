@@ -6,11 +6,13 @@
 
 #include "Global.h"
 #include "SSORestPlugin.h"
+#include "Logging.h"
 
 static ngx_int_t ngx_ssorest_plugin_init(ngx_conf_t *cf);
 static ngx_int_t ngx_ssorest_plugin_request_handler(ngx_http_request_t *r);
 
 static void *createServerConfiguration(ngx_conf_t *cf);
+static char *mergeServerConfiguration(ngx_conf_t *cf, void *parent, void *child);
 static char *setSSORestEnable(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestTrace(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
 static char *setSSORestUseServerNameAsDefault(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg);
@@ -161,14 +163,13 @@ static ngx_http_module_t ngx_ssorest_plugin_module_ctx =
         createServerConfiguration,
 
         /* merge server configuration */
-        NULL,
+        mergeServerConfiguration,
 
         /* create location configuration */
         NULL,
 
         /* merge location configuration */
         NULL
-        // ngx_http_idfc_ssorest_merge_conf
         };
 
 /* NGINX module definition. */
@@ -191,6 +192,11 @@ ngx_module_t ngx_ssorest_plugin_module =
 static void *createServerConfiguration(ngx_conf_t *cf)
 {
     return createPluginConfiguration(cf->pool);
+}
+
+static char *mergeServerConfiguration(ngx_conf_t *cf, void *parent, void *child)
+{
+    return mergePluginConfiguration(parent, child);
 }
 
 static char *setSSORestEnable(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
@@ -275,6 +281,13 @@ static char *setSSORestSSOZone(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
     ngx_str_t *ssozone;
     ngx_uint_t i;
 
+    if (conf->ssoZone == NULL) {
+        conf->ssoZone = ssorest_array_create(cf->pool, 1, sizeof(ngx_str_t));
+        if (conf->ssoZone == NULL) {
+            return NGX_CONF_ERROR ;
+        }
+    }
+
     value = cf->args->elts;
     for (i = 1; i < cf->args->nelts; i++) {
         ssozone = ngx_array_push(conf->ssoZone);
@@ -290,6 +303,13 @@ static char *setSSORestIgnoreExt(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
     ngx_str_t *value;
     ngx_str_t *ignore;
     ngx_uint_t i;
+
+    if (conf->ignoreExt == NULL) {
+        conf->ignoreExt = ssorest_array_create(cf->pool, 1, sizeof(ngx_str_t));
+        if (conf->ignoreExt == NULL) {
+            return NGX_CONF_ERROR ;
+        }
+    }
 
     value = cf->args->elts;
     for (i = 1; i < cf->args->nelts; i++) {
@@ -311,6 +331,13 @@ static char *setSSORestIgnoreUrl(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
     ngx_str_t *ignore;
     ngx_uint_t i;
 
+    if (conf->ignoreUrl == NULL) {
+        conf->ignoreUrl = ssorest_array_create(cf->pool, 1, sizeof(ngx_str_t));
+        if (conf->ignoreUrl == NULL) {
+            return NGX_CONF_ERROR ;
+        }
+    }
+
     value = cf->args->elts;
     for (i = 1; i < cf->args->nelts; i++) {
         ignore = ngx_array_push(conf->ignoreUrl);
@@ -326,6 +353,13 @@ static char *setSSORestIgnoreHeaders(ngx_conf_t *cf, ngx_command_t *cmd, void *c
     ngx_str_t *value;
     ngx_str_t *ignore;
     ngx_uint_t i;
+
+    if (conf->ignoreHeaders == NULL) {
+        conf->ignoreHeaders = ssorest_array_create(cf->pool, 1, sizeof(ngx_str_t));
+        if (conf->ignoreHeaders == NULL) {
+            return NGX_CONF_ERROR ;
+        }
+    }
 
     value = cf->args->elts;
     for (i = 1; i < cf->args->nelts; i++) {
