@@ -61,7 +61,7 @@ typedef json_object JSonGatewayRequest;
 
 SSORestPluginConfigration *createPluginConfiguration(SSORestPluginPool*);
 #ifdef APACHE
-SSORestPluginConfigration *mergePluginConfiguration(SSORestPluginPool*);
+SSORestPluginConfigration *mergePluginConfiguration(SSORestPluginPool *pool, void *BASE, void *ADD);
 #elif NGINX
 char *mergePluginConfiguration(void *, void *);
 #endif

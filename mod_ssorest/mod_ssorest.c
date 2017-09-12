@@ -6,11 +6,12 @@
 
 #include "Global.h"
 #include "SSORestPlugin.h"
-
+#include "Logging.h"
 static void register_hooks(apr_pool_t *pool);
 static int process(request_rec *r);
 
 static void *createServerConfiguration(apr_pool_t *p, server_rec *server);
+static void *mergeServerConfiguration(apr_pool_t *p, void *base, void *add);
 static const char *setSSORestEnable(cmd_parms *parms, void *cfg, const char* arg);
 static const char *setSSORestTrace(cmd_parms *parms, void *cfg, const char *arg);
 static const char *setSSORestUseServerNameAsDefault(cmd_parms *parms, void *cfg, const char *arg);
@@ -51,7 +52,7 @@ module AP_MODULE_DECLARE_DATA   ssorest_module =
     NULL,
     NULL,
     createServerConfiguration,
-    NULL,
+    mergeServerConfiguration,
     moduleDirectives,
     register_hooks
 };
@@ -60,6 +61,11 @@ module AP_MODULE_DECLARE_DATA   ssorest_module =
 static void *createServerConfiguration(apr_pool_t *p, server_rec *server)
 {
     return createPluginConfiguration(p);
+}
+
+static void *mergeServerConfiguration(apr_pool_t *p, void *base, void *add)
+{
+    return mergePluginConfiguration(p, base, add);
 }
 
 static const char *setSSORestEnable(cmd_parms *parms, void *cfg, const char *arg)
@@ -157,7 +163,61 @@ static const char *setSSORestIgnoreHeaders(cmd_parms *parms, void *cfg, const ch
 static int process(request_rec *r)
 {
     SSORestPluginConfigration *conf = ap_get_module_config(r->server->module_config, &ssorest_module);
-    processRequest(r, conf);
+
+    logEmerg(r, "isEnabled: %d", conf->isEnabled);
+    logEmerg(r, "isTraceEnabled: %d", conf->isTraceEnabled);
+    logEmerg(r, "useServerNameAsDefault: %d", conf->useServerNameAsDefault);
+    logEmerg(r, "sendFormParameters: %d", conf->sendFormParameters);
+    logEmerg(r, "acoName: %s", conf->acoName);
+    logEmerg(r, "gatewayUrl: %s", conf->gatewayUrl);
+    logEmerg(r, "localrootpath: %s", conf->localrootpath);
+    logEmerg(r, "pluginId: %s", conf->pluginId);
+    logEmerg(r, "secretKey: %s", conf->secretKey);
+
+    UINT i;
+    if (conf->ssoZone != NULL )
+    {
+        logEmerg(r, "ssoZone[%d]", conf->ssoZone->nelts);
+        for (i = 0; i < conf->ssoZone->nelts; i++)
+        {
+            #ifdef APACHE
+                const char *s = ((const char**)conf->ssoZone->elts)[i];
+            #elif NGINX
+                u_char *s = ((ngx_str_t *)conf->ssoZone->elts)[i].data;
+            #endif
+            logEmerg(r, "ssoZone[%d]: %s", i, s);
+        }
+    }
+
+    if (conf->ignoreExt != NULL )
+    {
+        logEmerg(r, "ignoreExt[%d]", conf->ignoreExt->nelts);
+        for (i = 0; i < conf->ignoreExt->nelts; i++)
+        {
+            #ifdef APACHE
+                const char *s = ((const char**)conf->ignoreExt->elts)[i];
+            #elif NGINX
+                u_char *s = ((ngx_str_t *)conf->ignoreExt->elts)[i].data;
+            #endif
+            logEmerg(r, "ignoreExt[%d]: %s", i, s);
+        }
+    }
+
+    if (conf->ignoreUrl != NULL )
+    {
+        logEmerg(r, "ignoreUrl[%d]", conf->ignoreUrl->nelts);
+        for (i = 0; i < conf->ignoreUrl->nelts; i++)
+        {
+            #ifdef APACHE
+                const char *s = ((const char**)conf->ignoreUrl->elts)[i];
+            #elif NGINX
+                u_char *s = ((ngx_str_t *)conf->ignoreUrl->elts)[i].data;
+            #endif
+            logEmerg(r, "ignoreUrl[%d]: %s", i, s);
+        }
+}
+
+    // processRequest(r, conf);
     
     return OK;
 }

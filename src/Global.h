@@ -11,6 +11,7 @@
     #include <http_core.h>
     #include <http_protocol.h>
     #include <http_log.h>
+    #include <ap_compat.h>
     typedef request_rec SSORestRequestObject;
     typedef apr_pool_t SSORestPluginPool;
     typedef apr_array_header_t ssorest_array_t;
