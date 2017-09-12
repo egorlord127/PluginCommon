@@ -136,6 +136,9 @@ static const char *setSSORestSecretKey(cmd_parms *parms, void *cfg, const char *
 static const char *setSSORestSSOZone(cmd_parms *parms, void *cfg, const char *arg)
 {
     SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
+    if (conf->ssoZone == NULL)
+        conf->ssoZone = apr_array_make(parms->pool, 1, sizeof(const char *));
+    
     *(const char**)apr_array_push(conf->ssoZone) = arg;
     return NULL;
 }
@@ -145,81 +148,31 @@ static const char *setSSORestIgnoreExt(cmd_parms *parms, void *cfg, const char *
     if (arg[0] != '.' || strlen(arg) < 2) 
         return "SSORestIgnoreExt should be start with '.'";
     arg++;
+    if (conf->ignoreExt == NULL)
+        conf->ignoreExt = apr_array_make(parms->pool, 1, sizeof(const char *));
     *(const char**)apr_array_push(conf->ignoreExt) = arg;
     return NULL;
 }
 static const char *setSSORestIgnoreUrl(cmd_parms *parms, void *cfg, const char *arg)
 {
     SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
+    if (conf->ignoreUrl == NULL)
+        conf->ignoreUrl = apr_array_make(parms->pool, 1, sizeof(const char *));
     *(const char**)apr_array_push(conf->ignoreUrl) = arg;
     return NULL;
 }
 static const char *setSSORestIgnoreHeaders(cmd_parms *parms, void *cfg, const char *arg)
 {
     SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
+    if (conf->ignoreHeaders == NULL)
+        conf->ignoreHeaders = apr_array_make(parms->pool, 1, sizeof(const char *));
     *(const char**)apr_array_push(conf->ignoreHeaders) = arg;
     return NULL;
 }
 static int process(request_rec *r)
 {
     SSORestPluginConfigration *conf = ap_get_module_config(r->server->module_config, &ssorest_module);
-
-    logEmerg(r, "isEnabled: %d", conf->isEnabled);
-    logEmerg(r, "isTraceEnabled: %d", conf->isTraceEnabled);
-    logEmerg(r, "useServerNameAsDefault: %d", conf->useServerNameAsDefault);
-    logEmerg(r, "sendFormParameters: %d", conf->sendFormParameters);
-    logEmerg(r, "acoName: %s", conf->acoName);
-    logEmerg(r, "gatewayUrl: %s", conf->gatewayUrl);
-    logEmerg(r, "localrootpath: %s", conf->localrootpath);
-    logEmerg(r, "pluginId: %s", conf->pluginId);
-    logEmerg(r, "secretKey: %s", conf->secretKey);
-
-    UINT i;
-    if (conf->ssoZone != NULL )
-    {
-        logEmerg(r, "ssoZone[%d]", conf->ssoZone->nelts);
-        for (i = 0; i < conf->ssoZone->nelts; i++)
-        {
-            #ifdef APACHE
-                const char *s = ((const char**)conf->ssoZone->elts)[i];
-            #elif NGINX
-                u_char *s = ((ngx_str_t *)conf->ssoZone->elts)[i].data;
-            #endif
-            logEmerg(r, "ssoZone[%d]: %s", i, s);
-        }
-    }
-
-    if (conf->ignoreExt != NULL )
-    {
-        logEmerg(r, "ignoreExt[%d]", conf->ignoreExt->nelts);
-        for (i = 0; i < conf->ignoreExt->nelts; i++)
-        {
-            #ifdef APACHE
-                const char *s = ((const char**)conf->ignoreExt->elts)[i];
-            #elif NGINX
-                u_char *s = ((ngx_str_t *)conf->ignoreExt->elts)[i].data;
-            #endif
-            logEmerg(r, "ignoreExt[%d]: %s", i, s);
-        }
-    }
-
-    if (conf->ignoreUrl != NULL )
-    {
-        logEmerg(r, "ignoreUrl[%d]", conf->ignoreUrl->nelts);
-        for (i = 0; i < conf->ignoreUrl->nelts; i++)
-        {
-            #ifdef APACHE
-                const char *s = ((const char**)conf->ignoreUrl->elts)[i];
-            #elif NGINX
-                u_char *s = ((ngx_str_t *)conf->ignoreUrl->elts)[i].data;
-            #endif
-            logEmerg(r, "ignoreUrl[%d]: %s", i, s);
-        }
-}
-
-    // processRequest(r, conf);
-    
-    return OK;
+    return processRequest(r, conf);
 }
 
 static void register_hooks(apr_pool_t *pool) 
