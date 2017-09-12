@@ -250,7 +250,16 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
     }
 
     // For all other response codes, send along back to the browser
-    
+    // Send Content-Type to the client
+    if (jsonGatewayResponse->jsonResponseContentType != NULL && json_object_is_type(jsonGatewayResponse->jsonResponseContentType, json_type_string)) {
+        const char* contentType = json_object_get_string(jsonGatewayResponse->jsonResponseContentType);
+        #ifdef APACHE
+            ap_set_content_type(r, contentType);
+        #elif NGINX
+            ngx_str_t str_tmp = ngx_string(contentType);
+            r->headers_out.content_type = str_tmp;
+        #endif
+    }
 
     // Transfer response cookies
     if (propagateCookies(r, conf, jsonGatewayResponse->jsonResponseCookies, HEADERS_OUT) == SSOREST_OK && conf->isDebugEnabled)
@@ -441,6 +450,9 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
             ptr = strtok_r(NULL, "\n", &temp);
         }
     }
+    
+    // Get json object from json gateway response.
+    // Note: no reference counts is changed using 'json_object_object_get_ex' function.
     json_object_object_get_ex(jsonGatewayResponse->json, "request", &jsonGatewayResponse->jsonRequest);
     json_object_object_get_ex(jsonGatewayResponse->jsonRequest, "headers", &jsonGatewayResponse->jsonRequestHeader);
     json_object_object_get_ex(jsonGatewayResponse->jsonRequest, "cookies", &jsonGatewayResponse->jsonRequestCookies);
@@ -797,7 +809,8 @@ void ssorest_table_set(ngx_list_t *header, const char *key, const char *value)
         ho = ngx_list_push(header);
         if (ho == NULL)
         {
-            logError(r, "Failed to add new element into list");
+            // TODO: Error Handling
+            // logError(r, "Failed to add new element into list");
         }
     }   
     ho->key.len = strlen(key);
