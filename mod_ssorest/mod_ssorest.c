@@ -177,6 +177,10 @@ static int process(request_rec *r)
 
 static void register_hooks(apr_pool_t *pool) 
 {
+    ap_log_perror(APLOG_MARK, APLOG_NOTICE, 0, pool, APLOGNO(10000)"SSO/Rest Plugin initialized");
+    #if defined(SVN_REV) && defined(MOD_VER)
+        ap_log_perror(APLOG_MARK, APLOG_NOTICE, pool, APLOGNO(10001) "SSO/Rest Plugin for NGINX v%s build %s", MOD_VER, SVN_REV);
+    #endif
     ap_hook_check_access(process, NULL, NULL, APR_HOOK_LAST, AP_AUTH_INTERNAL_PER_URI);
 }
 

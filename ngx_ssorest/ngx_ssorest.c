@@ -6,7 +6,6 @@
 
 #include "Global.h"
 #include "SSORestPlugin.h"
-#include "Logging.h"
 
 static ngx_int_t ngx_ssorest_plugin_init(ngx_conf_t *cf);
 static ngx_int_t ngx_ssorest_plugin_request_handler(ngx_http_request_t *r);
@@ -387,10 +386,10 @@ static ngx_int_t ngx_ssorest_plugin_init(ngx_conf_t *cf)
 
     *h = ngx_ssorest_plugin_request_handler;
 
-    // logNotice(cf->log, 0, "SSO/Rest Plugin initialized");
+    ngx_log_error(NGX_LOG_NOTICE, cf->log, 0, "SSO/Rest Plugin initialized");
 
     #if defined(SVN_REV) && defined(MOD_VER)
-        // logNotice(cf->log, 0, "SSO/Rest Plugin for NGINX v%s build %s", MOD_VER, SVN_REV);
+        ngx_log_error(NGX_LOG_NOTICE, cf->log, 0, "SSO/Rest Plugin for NGINX v%s build %s", MOD_VER, SVN_REV);
     #endif
 
     return NGX_OK;
