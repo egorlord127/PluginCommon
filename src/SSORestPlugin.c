@@ -153,35 +153,41 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
     /* 1.Check if the request uri matches with ignored extension */
     const char *requestExt = getRequestFileExtension(r);
     UINT i;
-    for (i = 0; i < conf->ignoreExt->nelts; i++ )
+    if (conf->ignoreExt != NULL && conf->ignoreExt->nelts)
     {
-        #ifdef APACHE
-            const char *s = ((const char**)conf->ignoreExt->elts)[i];
-        #elif NGINX
-            const char *s = (const char *) ((ngx_str_t *)conf->ignoreExt->elts)[i].data;
-        #endif
-        if (strcmp(s, requestExt) == 0) {
-            if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
-                logDebug(r, "Ignore Extension Matched");
-            return SSOREST_DECLINED;
+        for (i = 0; i < conf->ignoreExt->nelts; i++ )
+        {
+            #ifdef APACHE
+                const char *s = ((const char**)conf->ignoreExt->elts)[i];
+            #elif NGINX
+                const char *s = (const char *) ((ngx_str_t *)conf->ignoreExt->elts)[i].data;
+            #endif
+            if (strcmp(s, requestExt) == 0) {
+                if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
+                    logDebug(r, "Ignore Extension Matched");
+                return SSOREST_DECLINED;
+            }
+        }
+    }
+    /* 2.Check if the request uri matches with ignored url */
+    const char *uri = getUri(r);
+    if (conf->ignoreUrl != NULL && conf->ignoreUrl->nelts)
+    {
+        for (i = 0; i < conf->ignoreUrl->nelts; i++ )
+        {
+            #ifdef APACHE
+                const char *ignoreuri = ((const char**)conf->ignoreUrl->elts)[i];
+            #elif NGINX
+                const char *ignoreuri = (const char *) ((ngx_str_t *)conf->ignoreUrl->elts)[i].data;
+            #endif
+            if (strstr(uri, ignoreuri)) {
+                if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
+                    logDebug(r, "Ignore Url Matched");
+                return SSOREST_DECLINED;
+            }
         }
     }
 
-    /* 2.Check if the request uri matches with ignored url */
-    const char *uri = getUri(r);
-    for (i = 0; i < conf->ignoreUrl->nelts; i++ )
-    {
-        #ifdef APACHE
-            const char *ignoreuri = ((const char**)conf->ignoreUrl->elts)[i];
-        #elif NGINX
-            const char *ignoreuri = (const char *) ((ngx_str_t *)conf->ignoreUrl->elts)[i].data;
-        #endif
-        if (strstr(uri, ignoreuri)) {
-            if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
-                logDebug(r, "Ignore Url Matched");
-            return SSOREST_DECLINED;
-        }
-    }
     if (conf->gatewayUrl == NULL)
     {
         logError(r, "No SSORestGatewayUrl in configuration");
@@ -535,7 +541,13 @@ int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
         else 
             logDebug(r, "Transferring gateway request headers to request");
 
-            logDebug(r, "%s", pretty);
+        int linenr = 0;
+        char *ptr, *temp = NULL;
+        ptr = strtok_r((char * )pretty, "\n", &temp);
+        while (ptr != NULL) {
+            logDebug(r, "%2d: %s", ++linenr, ptr);
+            ptr = strtok_r(NULL, "\n", &temp);
+        }
     }
 
     json_object_object_foreach(headers, key, jsonVal) {
@@ -559,21 +571,23 @@ int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
         // Ignore headers
         UINT i;
         int skip_header = 0;
-        for (i = 0; i < conf->ignoreHeaders->nelts; i++ )
+        if (conf->ignoreHeaders != NULL && conf->ignoreHeaders->nelts)
         {
-            #ifdef APACHE
-                const char *s = ((const char**)conf->ignoreHeaders->elts)[i];
-            #elif NGINX
-                const char *s = toStringSafety(r->pool, ((ngx_str_t *)conf->ignoreHeaders->elts)[i].data, ((ngx_str_t *)conf->ignoreHeaders->elts)[i].len);
-            #endif
-            if (strcasecmp(s, key) == 0) {
-                if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
-                    logDebug(r, "Skipping '%s' header", key);
-                skip_header = 1;
-                break;
+            for (i = 0; i < conf->ignoreHeaders->nelts; i++ )
+            {
+                #ifdef APACHE
+                    const char *s = ((const char**)conf->ignoreHeaders->elts)[i];
+                #elif NGINX
+                    const char *s = toStringSafety(r->pool, ((ngx_str_t *)conf->ignoreHeaders->elts)[i].data, ((ngx_str_t *)conf->ignoreHeaders->elts)[i].len);
+                #endif
+                if (strcasecmp(s, key) == 0) {
+                    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
+                        logDebug(r, "Skipping '%s' header", key);
+                    skip_header = 1;
+                    break;
+                }
             }
         }
-
         if (skip_header == 1)
             continue;
 
@@ -626,7 +640,13 @@ int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, j
         else
             logDebug(r, "Transferring gateway cookies to response");
         
-        logDebug(r, "%s", pretty);
+        int linenr = 0;
+        char *ptr, *temp = NULL;
+        ptr = strtok_r((char * )pretty, "\n", &temp);
+        while (ptr != NULL) {
+            logDebug(r, "%2d: %s", ++linenr, ptr);
+            ptr = strtok_r(NULL, "\n", &temp);
+        }
     }
     
     int arraylen = json_object_array_length(jsonCookies);

@@ -206,7 +206,7 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPlu
         cookie_value = ssorest_pcalloc(r->pool, strlen(cookie));
         sscanf(cookie, "%[^=]=%s", cookie_name, cookie_value);
 
-        if(conf->ssoZone)
+        if(conf->ssoZone != NULL && conf->ssoZone->nelts)
         {
             UINT i;
             UINT flag = 0;
