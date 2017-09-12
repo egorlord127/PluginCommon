@@ -250,7 +250,7 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
     }
 
     // For all other response codes, send along back to the browser
-    // TODO: Send Content-Type to the client?
+    
 
     // Transfer response cookies
     if (propagateCookies(r, conf, jsonGatewayResponse->jsonResponseCookies, HEADERS_OUT) == SSOREST_OK && conf->isDebugEnabled)
@@ -295,6 +295,7 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     json_object *challenge = NULL;
     char *challengeValue = NULL;
 
+    // Check whether gateway support new challenge model or not.
     if (jsonGatewayResponse->jsonResponseHeader != NULL && json_object_is_type(jsonGatewayResponse->jsonResponseHeader, json_type_object))
     {
         json_object_object_get_ex(jsonGatewayResponse->jsonResponseHeader, CHALLENGE_HEADER_NAME, &challenge);
@@ -307,7 +308,8 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
                 if (tmp && json_object_is_type(tmp, json_type_string))
                 {
                     challengeValue = (char *) json_object_get_string(tmp);
-                    isChallengeModel = 1;
+                    if (challengeValue != NULL)
+                        isChallengeModel = 1;
                 }
             }
         }
@@ -318,7 +320,7 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
             logDebug(r, "Gateway support new challenge model");
         
         const char *digest = computeRFC2104HMAC(r, challengeValue, conf->secretKey);
-        if (challengeValue == NULL || digest == NULL)
+        if (digest == NULL)
         {
             logError(r, "Failed to generate hmac from challengeValue");
             return SSOREST_INTERNAL_ERROR;
@@ -447,7 +449,7 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "body", &jsonGatewayResponse->jsonResponseBody);
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "headers", &jsonGatewayResponse->jsonResponseHeader);
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "cookies", &jsonGatewayResponse->jsonResponseCookies);
-    
+    json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "content-type", &jsonGatewayResponse->jsonResponseContentType);
     
     json_object *jsonGatewayResponseStatus;
     json_object_object_get_ex(jsonGatewayResponse->jsonResponse, "status", &jsonGatewayResponseStatus);
