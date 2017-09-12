@@ -102,13 +102,15 @@ const char* getContextPath(SSORestRequestObject* r)
                     clcf->root_values->elts)
                     == NULL)
             {
-                // TODO: Error Handling
+                logError(r, "Failed to get context path");
+                return "";
             }
 
             if (ngx_get_full_name(r->pool, (ngx_str_t *) &ngx_cycle->prefix, &path)
                     != NGX_OK)
             {
-                // TODO: Error Handling
+                logError(r, "Failed to get full context path");
+                return "";
             }
             rv = toStringSafety(r->pool, path.data, path.len);
         }
@@ -130,12 +132,14 @@ const char* getLocalAddr(SSORestRequestObject* r)
         s.data = addr;
 
         if (ngx_connection_local_sockaddr(r->connection, &s, 0) != NGX_OK) {
-            // TODO: Error Handling
+            logError(r, "Failed to get local socket address");
+            return "";
         }
 
         s.data = ngx_pnalloc(r->pool, s.len);
         if (s.data == NULL) {
-            // TODO: Error Handling
+            logError(r, "Failed to allocate memory");
+            return "";
         }
 
         ngx_memcpy(s.data, addr, s.len);

@@ -31,10 +31,9 @@ typedef struct
     ssorest_regext_t    *regex;
 #elif NGINX
     #if (NGX_PCRE)
-    ngx_regex_t    *regex;
+    ssorest_regext_t    *regex;
     #endif
 #endif
-    
 
     CURL                *curl_session;
     SSORestPluginPool   *cf_pool;
@@ -61,10 +60,11 @@ typedef json_object JSonGatewayRequest;
 
 SSORestPluginConfigration *createPluginConfiguration(SSORestPluginPool*);
 #ifdef APACHE
-SSORestPluginConfigration *mergePluginConfiguration(SSORestPluginPool *pool, void *BASE, void *ADD);
+    SSORestPluginConfigration *mergePluginConfiguration(SSORestPluginPool *pool, void *BASE, void *ADD);
 #elif NGINX
-char *mergePluginConfiguration(void *, void *);
+    char *mergePluginConfiguration(void *, void *);
 #endif
+
 int processRequest(SSORestRequestObject *request, SSORestPluginConfigration *conf);
 int processJsonPayload(SSORestRequestObject *request, SSORestPluginConfigration *conf, JSonGatewayRequest *jsonGatewayRequest);
 void setGatewayToken(SSORestRequestObject *request, SSORestPluginConfigration *conf, JSonGatewayResponse *res);

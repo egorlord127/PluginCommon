@@ -54,7 +54,7 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPlu
         cln = ngx_pool_cleanup_add(r->pool, 0);
         if (cln == NULL) 
         {
-             // TODO: Error Handling
+            logError(r, "Failed to register cleanup function");
         }
         
         cln->handler = ssorest_json_cleanup;
@@ -442,7 +442,7 @@ static CURL* get_curl_session(SSORestRequestObject* r, SSORestPluginConfigration
                 cln = ngx_pool_cleanup_add(conf->cf_pool, 0);
                 if (cln == NULL) 
                 {
-                    // TODO: Error Handling
+                    logError(r, "Failed to register cleanup function");
                 }
                 
                 cln->handler = ssorest_curl_easy_cleanup;
@@ -467,7 +467,7 @@ static CURL* get_curl_session(SSORestRequestObject* r, SSORestPluginConfigration
                     cln = ngx_pool_cleanup_add(conf->cf_pool, 0);
                     if (cln == NULL) 
                     {
-                        // TODO: Error Handling
+                        logError(r, "Failed to register cleanup function");
                     }
                     
                     cln->handler = ssorest_curl_slist_free_all;
@@ -479,7 +479,7 @@ static CURL* get_curl_session(SSORestRequestObject* r, SSORestPluginConfigration
 		}
 	}
 	if ( conf->curl_session == NULL ) {
-		// TODO: Error Handling
+		logError(r, "Failed to get curl session from configuration context");
 	}
 	return conf->curl_session;
 }

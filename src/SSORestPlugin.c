@@ -193,7 +193,7 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
         cln = ngx_pool_cleanup_add(r->pool, 0);
         if (cln == NULL) 
         {
-            // TODO: Error Handling
+            logError(r, "Failed to register cleanup function");
         }
         
         cln->handler = ssorest_json_cleanup;
@@ -775,7 +775,7 @@ void ssorest_table_set(ngx_list_t *header, const char *key, const char *value)
         ho = ngx_list_push(header);
         if (ho == NULL)
         {
-            // TODO: Error Handling 
+            logError(r, "Failed to add new element into list");
         }
     }   
     ho->key.len = strlen(key);
