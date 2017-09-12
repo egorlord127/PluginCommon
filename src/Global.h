@@ -16,6 +16,7 @@
     typedef apr_array_header_t ssorest_array_t;
     typedef apr_table_t ssorest_table_t;
     typedef unsigned int UINT;
+    typedef ap_regex_t ssorest_regext_t;
     #define SSOREST_DECLINED (DECLINED)
     #define SSOREST_OK (OK)
     #define ssorest_pcalloc(pool, size) (apr_pcalloc(pool, size))
@@ -33,6 +34,7 @@
     typedef ngx_array_t ssorest_array_t;
     typedef ngx_table_elt_t ssorest_table_t;
     typedef ngx_uint_t UINT;
+    typedef ngx_regex_t ssorest_regext_t;
     #define SSOREST_DECLINED (NGX_DECLINED)
     #define SSOREST_OK (NGX_OK)
     #define ssorest_pcalloc(pool, size) (ngx_pcalloc(pool, size))

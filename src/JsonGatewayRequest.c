@@ -71,7 +71,30 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPlu
     json_object_object_add(jsonGatewayRequest, "protocol", json_object_new_string(getProtocol(r)));
 
     // characterEncoding
-    json_object_object_add(jsonGatewayRequest, "characterEncoding", json_object_new_string(getCharacterEncoding(r)));
+    // parse content-type
+    #ifdef APACHE
+        const char *value = getCharacterEncoding(r); 
+    #elif NGINX
+        const char *value = getContentType(r);
+        ngx_int_t  n;
+        int        captures[(1 + 1) * 3];
+        ngx_str_t input;
+        input.data = (u_char *) value;
+        input.len = strlen(value);
+        
+        n = ngx_regex_exec(conf->regex, &input, captures, (1 + 1) * 3);
+        if (n >= 0) {
+            value = value + captures[2];
+        } else if (n == NGX_REGEX_NO_MATCHED) {
+            value = "";
+            logError(r, "No match was found");
+        } else {
+            value = "";
+            logError(r, ngx_regex_exec_n " failed: %i", n);
+        }
+    #endif
+
+    json_object_object_add(jsonGatewayRequest, "characterEncoding", json_object_new_string(value));
 
     // contentLength
     json_object_object_add(jsonGatewayRequest, "contentLength", json_object_new_int(getContentLength(r)));

@@ -10,23 +10,35 @@
 #include <curl/curl.h>
 typedef struct 
 {
-    int isEnabled;
-    int isTraceEnabled;
-    int useServerNameAsDefault;
-    int sendFormParameters;
-    int isDebugEnabled;
-    const char *acoName;
-    const char *gatewayUrl;
-    const char *localrootpath;
-    const char *pluginId;
-    const char *secretKey;
-    char *gatewayToken;
-    ssorest_array_t *ssoZone;
-    ssorest_array_t *ignoreExt;
-    ssorest_array_t *ignoreUrl;
-    ssorest_array_t *ignoreHeaders;
-    CURL *curl_session;
-    SSORestPluginPool *cf_pool;
+    int                  isEnabled;
+    int                  isTraceEnabled;
+    int                  useServerNameAsDefault;
+    int                  sendFormParameters;
+    int                  isDebugEnabled;
+    const char          *acoName;
+    const char          *gatewayUrl;
+    const char          *localrootpath;
+    const char          *pluginId;
+    const char          *secretKey;
+    char                *gatewayToken;
+    
+    ssorest_array_t     *ssoZone;
+    ssorest_array_t     *ignoreExt;
+    ssorest_array_t     *ignoreUrl;
+    ssorest_array_t     *ignoreHeaders;
+    
+#ifdef APACHE
+    ssorest_regext_t    *regex;
+#elif NGINX
+    #if (NGX_PCRE)
+    ngx_regex_t    *regex;
+    #endif
+#endif
+    
+
+    CURL                *curl_session;
+    SSORestPluginPool   *cf_pool;
+    
 } SSORestPluginConfigration;
 
 typedef struct JSonGatewayResponse{

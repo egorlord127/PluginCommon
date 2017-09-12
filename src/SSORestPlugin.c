@@ -36,7 +36,25 @@ SSORestPluginConfigration* createPluginConfiguration(SSORestPluginPool* pool)
         conf->ignoreExt          = ssorest_array_create(pool, 1, sizeof(const char *));
         conf->ignoreUrl          = ssorest_array_create(pool, 1, sizeof(const char *));
         conf->ignoreHeaders      = ssorest_array_create(pool, 1, sizeof(const char *));
+    #elif NGINX
+        ngx_regex_compile_t rc;
+        u_char              errstr[NGX_MAX_CONF_ERRSTR];
+        ngx_str_t value = ngx_string("charset\\s*=\\s*([^\\s;]*)");
+
+        ngx_memzero(&rc, sizeof(ngx_regex_compile_t));
+
+        rc.pattern = value;
+        rc.pool = pool;
+        rc.err.len = NGX_MAX_CONF_ERRSTR;
+        rc.err.data = errstr;
+
+        if (ngx_regex_compile(&rc) != NGX_OK) {
+            return NULL;
+        }
+
+        conf->regex = rc.regex;
     #endif
+
     conf->cf_pool = pool;
     return conf;
 }
