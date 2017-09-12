@@ -74,3 +74,12 @@ int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf
 int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *, int dir);
 int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *, int dir);
 int transferContent(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *);
+
+#define ssorest_conf_merge_value(conf, prev, default)                           \
+    if (conf == SSOREST_CONF_UNSET) {                                               \
+        conf = (prev == SSOREST_CONF_UNSET) ? default : prev;                       \
+    }
+#define ssorest_conf_merge_ptr(conf, prev, default)                             \
+    if (conf == NULL) {                                                         \
+        conf = (prev == NULL) ? default : prev;                                 \
+    }

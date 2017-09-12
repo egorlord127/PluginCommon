@@ -68,62 +68,21 @@ char *mergePluginConfiguration(void *parent, void *child)
     SSORestPluginConfigration *prev = parent;
     SSORestPluginConfigration *conf = child;
     
-    if (conf->isEnabled == SSOREST_CONF_UNSET)
-    {
-        conf->isEnabled = (prev->isEnabled == SSOREST_CONF_UNSET) ? 0 : prev->isEnabled;
-    }
-    if (conf->isTraceEnabled == SSOREST_CONF_UNSET)
-    {
-        conf->isTraceEnabled = (prev->isTraceEnabled == SSOREST_CONF_UNSET) ? 0 : prev->isTraceEnabled;
-    }
-    if (conf->useServerNameAsDefault == SSOREST_CONF_UNSET)
-    {
-        conf->useServerNameAsDefault = (prev->useServerNameAsDefault == SSOREST_CONF_UNSET) ? 0 : prev->useServerNameAsDefault;
-    }
-    if (conf->isDebugEnabled == SSOREST_CONF_UNSET)
-    {
-        conf->isDebugEnabled = (prev->isDebugEnabled == SSOREST_CONF_UNSET) ? 0 : prev->isDebugEnabled;
-    }
-    if (conf->sendFormParameters == SSOREST_CONF_UNSET)
-    {
-        conf->sendFormParameters = (prev->sendFormParameters == SSOREST_CONF_UNSET) ? 0 : prev->sendFormParameters;
-    }
-    if (conf->acoName == NULL)
-    {
-        conf->acoName = (prev->acoName == NULL) ? NULL : prev->gatewayUrl;
-    }
-    if (conf->gatewayUrl == NULL)
-    {
-        conf->gatewayUrl = (prev->gatewayUrl == NULL) ? NULL : prev->gatewayUrl;
-    }
-    if (conf->localrootpath == NULL)
-    {
-        conf->localrootpath = (prev->localrootpath == NULL) ? NULL : prev->localrootpath;
-    }
-    if (conf->pluginId == NULL)
-    {
-        conf->pluginId = (prev->pluginId == NULL) ? NULL : prev->pluginId;
-    }
-    if (conf->secretKey == NULL)
-    {
-        conf->secretKey = (prev->secretKey == NULL) ? NULL : prev->secretKey;
-    }
-    if (conf->ssoZone == NULL)
-    {
-        conf->ssoZone = (prev->ssoZone == NULL) ? NULL : prev->ssoZone;
-    }
-    if (conf->ignoreExt == NULL)
-    {
-        conf->ignoreExt = (prev->ignoreExt == NULL) ? NULL : prev->ignoreExt;
-    }
-    if (conf->ignoreUrl == NULL)
-    {
-        conf->ignoreUrl = (prev->ignoreUrl == NULL) ? NULL : prev->ignoreUrl;
-    }
-    if (conf->ignoreHeaders == NULL)
-    {
-        conf->ignoreHeaders = (prev->ignoreHeaders == NULL) ? NULL : prev->ignoreHeaders;
-    }
+    ssorest_conf_merge_value(conf->isEnabled, prev->isEnabled, 0);
+    ssorest_conf_merge_value(conf->isTraceEnabled, prev->isTraceEnabled, 0);
+    ssorest_conf_merge_value(conf->useServerNameAsDefault, prev->useServerNameAsDefault, 0);
+    ssorest_conf_merge_value(conf->isDebugEnabled, prev->isDebugEnabled, 0);
+    ssorest_conf_merge_value(conf->sendFormParameters, prev->sendFormParameters, 0);
+    ssorest_conf_merge_ptr(conf->acoName, prev->acoName, NULL);
+    ssorest_conf_merge_ptr(conf->gatewayUrl, prev->gatewayUrl, NULL);
+    ssorest_conf_merge_ptr(conf->localrootpath, prev->localrootpath, NULL);
+    ssorest_conf_merge_ptr(conf->pluginId, prev->pluginId, NULL);
+    ssorest_conf_merge_ptr(conf->secretKey, prev->secretKey, NULL);
+    ssorest_conf_merge_ptr(conf->ssoZone, prev->ssoZone, NULL);
+    ssorest_conf_merge_ptr(conf->ignoreExt, prev->ignoreExt, NULL);
+    ssorest_conf_merge_ptr(conf->ignoreUrl, prev->ignoreUrl, NULL);
+    ssorest_conf_merge_ptr(conf->ignoreHeaders, prev->ignoreHeaders, NULL);
+    
     #ifdef APACHE
         return conf;
     #elif NGINX
