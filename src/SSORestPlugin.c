@@ -599,7 +599,7 @@ int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
                 logDebug(r, "Transferring gateway request header to request: %s=%s", key, value);    
         }
 
-        #ifdef APAHCE
+        #ifdef APACHE
             if (dir == HEADERS_IN)
             {
                 ssorest_table_set(r->headers_in, key, value);
