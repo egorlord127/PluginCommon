@@ -109,7 +109,7 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
     if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
         logDebug(r, "Processing new request:%s", getUrl(r));
 
-    /* 1.Check if the request uri matches with ignored extension */
+    // Do nothing if the uri match with ignore extension
     const char *requestExt = getRequestFileExtension(r);
     UINT i;
     if (conf->ignoreExt != NULL && conf->ignoreExt->nelts)
@@ -128,7 +128,8 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
             }
         }
     }
-    /* 2.Check if the request uri matches with ignored url */
+
+    // Do nothing if the uri match with ignore url
     const char *uri = getUri(r);
     if (conf->ignoreUrl != NULL && conf->ignoreUrl->nelts)
     {
@@ -147,11 +148,14 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
         }
     }
 
+    // Check if the gatewayUrl is configured
     if (conf->gatewayUrl == NULL)
     {
         logError(r, "No SSORestGatewayUrl in configuration");
         return SSOREST_INTERNAL_ERROR;
     }
+
+    // Process the request
     int ret = processJsonPayload(r, conf, NULL);
     if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
         logDebug(r, "Request to Gateway had result code: %d", ret);
@@ -171,6 +175,8 @@ int processRequest(SSORestRequestObject *r, SSORestPluginConfigration *conf)
 int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *json)
 {
     JSonGatewayRequest  *jsonGatewayRequest;
+
+    // Constrcut Json Request to be sent to gateway.
     if (json == NULL)
     {
         jsonGatewayRequest = buildJsonGatewayRequest(r, conf);
@@ -182,9 +188,11 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
     
     JSonGatewayResponse *jsonGatewayResponse = NULL;
 
+    // Parse Json Response from gateway.
     if (parseJsonGatewayResponse(r, conf, sendJsonGatewayRequest(r, conf, jsonGatewayRequest), &jsonGatewayResponse) == SSOREST_ERROR)
         return SSOREST_INTERNAL_ERROR;
 
+    // Register cleanup function.
     #ifdef APACHE
         apr_pool_cleanup_register(r->pool, jsonGatewayResponse->json, (void *) json_object_put, apr_pool_cleanup_null);
     #elif NGINX
@@ -206,10 +214,12 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
     // Remember the gateway token
     setGatewayToken(r, conf, jsonGatewayResponse);
 
+    // If gateway reply with error, return internal server error.
     if (jsonGatewayResponse->status == SSOREST_BAD_GATEWAY || jsonGatewayResponse->status == SSOREST_INTERNAL_ERROR) {
         return SSOREST_INTERNAL_ERROR;
     }
 
+    // Handle response SC_NOT_EXTENDED
     if (jsonGatewayResponse->status == SSOREST_SC_NOT_EXTENDED)
     {
         if (jsonGatewayResponse->jsonResponseBody == NULL || !json_object_is_type(jsonGatewayResponse->jsonResponseBody, json_type_string))
@@ -229,14 +239,18 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
         }
         else 
         {
-            // handleSendLocalFile
+            // TODO: handleSendLocalFile
         }
     }
 
+    // If the request is allowed to continue, progate headers and cookies from gateway.
     if (jsonGatewayResponse->status == SSOREST_SC_EXTENDED)
     {
         return handleAllowContinue(r, conf, jsonGatewayResponse);
     }
+
+    // For all other response codes, send along back to the browser
+    // TODO: Send Content-Type to the client?
 
     // Transfer response cookies
     if (propagateCookies(r, conf, jsonGatewayResponse->jsonResponseCookies, HEADERS_OUT) == SSOREST_OK && conf->isDebugEnabled)
@@ -453,11 +467,14 @@ int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration 
  */
 void setGatewayToken(SSORestRequestObject *r, SSORestPluginConfigration *conf, JSonGatewayResponse *jsonGatewayResponse)
 {
+    // Check if  gateway response header is not null
     if (jsonGatewayResponse->jsonResponseHeader == NULL || !json_object_is_type(jsonGatewayResponse->jsonRequestHeader, json_type_object))
         return;
     
+    // Get gatewayToken from the gateway response.
     json_object *gatewayTokenJson = NULL;
     json_object_object_get_ex(jsonGatewayResponse->jsonResponseHeader, GATEWAY_TOKEN_NAME, &gatewayTokenJson);
+
     if (gatewayTokenJson == NULL || !json_object_is_type(gatewayTokenJson, json_type_array))
         return;
 
@@ -467,9 +484,12 @@ void setGatewayToken(SSORestRequestObject *r, SSORestPluginConfigration *conf, J
     json_object *gatewayTokenValue = json_object_array_get_idx(gatewayTokenJson, 0);
     if (gatewayTokenValue == NULL || !json_object_is_type(gatewayTokenValue, json_type_string))
         return;
-    
+
+    // get gatewayToken string from gateway.
     const char* gatewayToken = json_object_get_string(gatewayTokenValue);
     int gatewayTokenLength = strlen(gatewayToken);
+
+    // Store gatewayToken into configuration.
     conf->gatewayToken = ssorest_pcalloc(conf->cf_pool, gatewayTokenLength + 1);
     memcpy(conf->gatewayToken, (char *) gatewayToken, gatewayTokenLength);
     conf->gatewayToken[gatewayTokenLength] = '\0';
