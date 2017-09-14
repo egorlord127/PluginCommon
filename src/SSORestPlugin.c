@@ -561,29 +561,6 @@ int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, js
         if (value == NULL)
             continue;
         
-        // Ignore headers
-        UINT i;
-        int skip_header = 0;
-        if (conf->ignoreHeaders != NULL && conf->ignoreHeaders->nelts)
-        {
-            for (i = 0; i < conf->ignoreHeaders->nelts; i++ )
-            {
-                #ifdef APACHE
-                    const char *s = ((const char**)conf->ignoreHeaders->elts)[i];
-                #elif NGINX
-                    const char *s = toStringSafety(r->pool, ((ngx_str_t *)conf->ignoreHeaders->elts)[i].data, ((ngx_str_t *)conf->ignoreHeaders->elts)[i].len);
-                #endif
-                if (strcasecmp(s, key) == 0) {
-                    if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
-                        logDebug(r, "Skipping '%s' header", key);
-                    skip_header = 1;
-                    break;
-                }
-            }
-        }
-        if (skip_header == 1)
-            continue;
-
         if (conf->isDebugEnabled == SSOREST_CONF_ENABLED)
         {
             if (dir == HEADERS_OUT)
