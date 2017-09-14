@@ -13,6 +13,7 @@
 #include "Logging.h"
 
 static CURL* get_curl_session(SSORestRequestObject* r, SSORestPluginConfigration* conf);
+static int isIgnored(SSORestRequestObject *r, SSORestPluginConfigration *conf, const char *header);
 
 #ifdef NGINX
 void ssorest_json_cleanup(void *data)
@@ -159,34 +160,52 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPlu
     json_object* jsonGatewayRequestHeaders = json_object_new_object();
     
     // headers: accept-language
-    json_object* jsonHeaderAcceptLanguage = json_object_new_array();
-    json_object_array_add(jsonHeaderAcceptLanguage, json_object_new_string(getAcceptLanguage(r)));
-    json_object_object_add(jsonGatewayRequestHeaders, "accept-language", jsonHeaderAcceptLanguage);
+    if (!isIgnored(r, conf, "accept-language"))
+    {
+        json_object* jsonHeaderAcceptLanguage = json_object_new_array();
+        json_object_array_add(jsonHeaderAcceptLanguage, json_object_new_string(getAcceptLanguage(r)));
+        json_object_object_add(jsonGatewayRequestHeaders, "accept-language", jsonHeaderAcceptLanguage);
+    }
 
     // headers: connection
-    json_object* jsonHeaderConnection = json_object_new_array();
-    json_object_array_add(jsonHeaderConnection, json_object_new_string(getConnection(r)));
-    json_object_object_add(jsonGatewayRequestHeaders, "connection", jsonHeaderConnection);
+    if (!isIgnored(r, conf, "connection"))
+    {
+        json_object* jsonHeaderConnection = json_object_new_array();
+        json_object_array_add(jsonHeaderConnection, json_object_new_string(getConnection(r)));
+        json_object_object_add(jsonGatewayRequestHeaders, "connection", jsonHeaderConnection);    
+    }
 
     // headers: accept
-    json_object* jsonHeaderAccept = json_object_new_array();
-    json_object_array_add(jsonHeaderAccept, json_object_new_string(getAccept(r)));
-    json_object_object_add(jsonGatewayRequestHeaders, "accept", jsonHeaderAccept);
+    if (!isIgnored(r, conf, "accept"))
+    {
+        json_object* jsonHeaderAccept = json_object_new_array();
+        json_object_array_add(jsonHeaderAccept, json_object_new_string(getAccept(r)));
+        json_object_object_add(jsonGatewayRequestHeaders, "accept", jsonHeaderAccept);
+    }
 
     // headers: host
-    json_object* jsonHeaderHost = json_object_new_array();
-    json_object_array_add(jsonHeaderHost, json_object_new_string(getHost(r)));
-    json_object_object_add(jsonGatewayRequestHeaders, "host", jsonHeaderHost);
+    if (!isIgnored(r, conf, "host"))
+    {
+        json_object* jsonHeaderHost = json_object_new_array();
+        json_object_array_add(jsonHeaderHost, json_object_new_string(getHost(r)));
+        json_object_object_add(jsonGatewayRequestHeaders, "host", jsonHeaderHost);
+    }
 
     // headers: accept-encoding
-    json_object* jsonHeaderAcceptEncoding = json_object_new_array();
-    json_object_array_add(jsonHeaderAcceptEncoding, json_object_new_string(getAcceptEncoding(r)));
-    json_object_object_add(jsonGatewayRequestHeaders, "accept-encoding", jsonHeaderAcceptEncoding);
+    if (!isIgnored(r, conf, "accept-encoding"))
+    {
+        json_object* jsonHeaderAcceptEncoding = json_object_new_array();
+        json_object_array_add(jsonHeaderAcceptEncoding, json_object_new_string(getAcceptEncoding(r)));
+        json_object_object_add(jsonGatewayRequestHeaders, "accept-encoding", jsonHeaderAcceptEncoding);
+    }
 
     // headers: user-agent
-    json_object* jsonHeaderUserAgent = json_object_new_array();
-    json_object_array_add(jsonHeaderUserAgent, json_object_new_string(getUserAgent(r)));
-    json_object_object_add(jsonGatewayRequestHeaders, "user-agent", jsonHeaderUserAgent);
+    if (!isIgnored(r, conf, "user-agent"))
+    {
+        json_object* jsonHeaderUserAgent = json_object_new_array();
+        json_object_array_add(jsonHeaderUserAgent, json_object_new_string(getUserAgent(r)));
+        json_object_object_add(jsonGatewayRequestHeaders, "user-agent", jsonHeaderUserAgent);
+    }
 
     // headers
     json_object_object_add(jsonGatewayRequest, "headers", jsonGatewayRequestHeaders);
@@ -482,4 +501,25 @@ static CURL* get_curl_session(SSORestRequestObject* r, SSORestPluginConfigration
 		logError(r, "Failed to get curl session from configuration context");
 	}
 	return conf->curl_session;
+}
+static int isIgnored(SSORestRequestObject *r, SSORestPluginConfigration *conf, const char *header)
+{
+    UINT i;
+    int skip_header = 0;
+    if (conf->ignoreHeaders != NULL && conf->ignoreHeaders->nelts)
+    {
+        for (i = 0; i < conf->ignoreHeaders->nelts; i++ )
+        {
+            #ifdef APACHE
+                const char *s = ((const char**)conf->ignoreHeaders->elts)[i];
+            #elif NGINX
+                const char *s = toStringSafety(r->pool, ((ngx_str_t *)conf->ignoreHeaders->elts)[i].data, ((ngx_str_t *)conf->ignoreHeaders->elts)[i].len);
+            #endif
+            if (strcasecmp(s, header) == 0) {
+                skip_header = 1;
+                break;
+            }
+        }
+    }
+    return skip_header;
 }
