@@ -365,7 +365,38 @@ int handleSendLocalFile(SSORestRequestObject* r, SSORestPluginConfigration* conf
     if (conf->isDebugEnabled && value != NULL)
         logDebug(r, "File is located in %s", value);
     #ifdef APACHE
+        apr_file_t *file;
+        apr_finfo_t finfo;
+        apr_off_t offset;
+        if (apr_file_open(&file, value, APR_READ, APR_OS_DEFAULT, r->pool) != APR_SUCCESS)
+        {
+            ap_log_error(APLOG_MARK, APLOG_CRIT, 0, r->server, "Cannot open file %s", value);
+            return SSOREST_INTERNAL_ERROR;
+        }
 
+        apr_file_info_get(&finfo, APR_FINFO_SIZE, file);
+        fcc_file.mtime = apr_time_sec(finfo.mtime);
+        len = (size_t) finfo.size;
+        if (len == 0)
+        {
+            apr_file_close(file);
+            return SSOREST_INTERNAL_ERROR;
+        }
+        if ((fcc_file.content = (char *) apr_palloc(r->pool, len + 1)) == NULL)
+        {
+            ap_log_error(APLOG_MARK, APLOG_CRIT, 0, r->server, "Cannot allocate memory");
+            apr_file_close(file);
+            return SSOREST_INTERNAL_ERROR;
+        }
+        offset = 0;
+        apr_file_seek(file, APR_SET, &offset);
+        if (apr_file_read(file, fcc_file.content, &len) != APR_SUCCESS) {
+            ap_log_error(APLOG_MARK, APLOG_CRIT, 0, r->server, "Cannot read from file %s", value);
+            apr_file_close(file);
+            return SSOREST_INTERNAL_ERROR;
+        }
+        fcc_file.content[len] = '\0';
+        apr_file_close(file);
     #elif NGINX
         ssize_t n;
         ngx_file_t file;
@@ -426,7 +457,9 @@ int handleSendLocalFile(SSORestRequestObject* r, SSORestPluginConfigration* conf
     
     if (conf->isDebugEnabled && encodedContent != NULL)
     {
+        logDebug(r, "File Content: %s", fcc_file.content);
         logDebug(r, "Base64 Encoded Content: %s", encodedContent);
+        logDebug(r, "Modified time: %ld", fcc_file.mtime);
     }
 
     // Set Attributes
