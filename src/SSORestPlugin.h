@@ -77,7 +77,7 @@ int processJsonPayload(SSORestRequestObject *request, SSORestPluginConfigration 
 void setGatewayToken(SSORestRequestObject *request, SSORestPluginConfigration *conf, JSonGatewayResponse *res);
 int parseJsonGatewayResponse(SSORestRequestObject *r, SSORestPluginConfigration *conf, const char* jsonString, JSonGatewayResponse **res);
 int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *jsonGatewayRequest,JSonGatewayResponse *jsonGatewayResponse);
-int handleSendLocalFile(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *jsonGatewayRequest,JSonGatewayResponse *jsonGatewayResponse);
+int handleSendLocalFile(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *jsonGatewayRequest);
 int handleAllowContinue(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayResponse *jsonGatewayResponse);
 int propagateHeader(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *, int dir);
 int propagateCookies(SSORestRequestObject *r, SSORestPluginConfigration* conf, json_object *, int dir);

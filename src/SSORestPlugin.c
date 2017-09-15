@@ -239,7 +239,7 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
         }
         else 
         {
-            return handleSendLocalFile(r, conf, jsonGatewayRequest, jsonGatewayResponse);
+            return handleSendLocalFile(r, conf, jsonGatewayRequest);
         }
     }
 
@@ -357,20 +357,21 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
     return processJsonPayload(r, conf, jsonGatewayRequest);
 }
 
-int handleSendLocalFile(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *jsonGatewayRequest,JSonGatewayResponse *jsonGatewayResponse)
+int handleSendLocalFile(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *jsonGatewayRequest)
 {
     char *value = ssorest_pstrcat(r->pool, conf->localrootpath, getFileContextPath(r), NULL);
+    size_t len;
+    fcc_fileinfo fcc_file;
     if (conf->isDebugEnabled && value != NULL)
         logDebug(r, "File is located in %s", value);
     #ifdef APACHE
 
     #elif NGINX
-        size_t size;
         ssize_t n;
         ngx_file_t file;
         ngx_str_t  filename;
         ngx_file_info_t fi;
-        fcc_fileinfo fcc_file;
+        
         filename.data = (u_char *) value;
         filename.len = strlen(value);
         ngx_memzero(&file, sizeof(ngx_file_t));
@@ -388,15 +389,15 @@ int handleSendLocalFile(SSORestRequestObject* r, SSORestPluginConfigration* conf
             return SSOREST_INTERNAL_ERROR;
         }
 
-        size = (size_t) ngx_file_size(&fi);
+        len = (size_t) ngx_file_size(&fi);
         fcc_file.mtime = ngx_file_mtime(&fi);
         
-        fcc_file.content = (char*) ngx_palloc(r->pool, size + 1);
+        fcc_file.content = (char*) ngx_palloc(r->pool, len + 1);
         if (fcc_file.content == NULL) {
             return SSOREST_INTERNAL_ERROR;
         }
     
-        n = ngx_read_file(&file, (u_char *) fcc_file.content, size, 0);
+        n = ngx_read_file(&file, (u_char *) fcc_file.content, len, 0);
     
         if (n == NGX_ERROR) {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, ngx_read_file_n " \"%s\" failed", filename.data);
@@ -404,10 +405,10 @@ int handleSendLocalFile(SSORestRequestObject* r, SSORestPluginConfigration* conf
         }
     
         // Add null terminate.
-        fcc_file.content[size] = '\0';
+        fcc_file.content[len] = '\0';
     
-        if ((size_t) n != size) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, ngx_read_file_n " \"%s\" returned only %z bytes instead of %z", filename.data, n, size);
+        if ((size_t) n != len) {
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, ngx_read_file_n " \"%s\" returned only %z bytes instead of %z", filename.data, n, len);
             return SSOREST_INTERNAL_ERROR;
         }
 
@@ -416,8 +417,25 @@ int handleSendLocalFile(SSORestRequestObject* r, SSORestPluginConfigration* conf
             return SSOREST_INTERNAL_ERROR;
         }
     #endif
-    return 0;
-    // return processJsonPayload(r, conf, jsonGatewayRequest);
+
+    // Perform base64 Encode
+    int encoded_len = ((len + 2) / 3) * 4;
+    char *encodedContent = ssorest_pcalloc(r->pool, encoded_len);
+    encoded_len = base64_encode((unsigned char *) fcc_file.content, (unsigned char *) encodedContent, len);
+    encodedContent[encoded_len] = '\0';
+    
+    if (conf->isDebugEnabled && encodedContent != NULL)
+    {
+        logDebug(r, "Base64 Encoded Content: %s", encodedContent);
+    }
+
+    // Set Attributes
+    json_object *atts_json;
+    json_object_object_get_ex(jsonGatewayRequest, "attributes", &atts_json);
+    json_object_object_add(atts_json, "content", json_object_new_string(encodedContent));
+    json_object_object_add(atts_json, "contentTimestamp", json_object_new_int64(fcc_file.mtime));
+
+    return processJsonPayload(r, conf, jsonGatewayRequest);
 }
 
 /**
