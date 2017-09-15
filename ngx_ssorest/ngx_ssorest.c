@@ -204,6 +204,8 @@ static char *setSSORestEnable(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
     ngx_str_t *value = cf->args->elts;
     if (!ngx_strcasecmp(value[1].data, (u_char *) "on"))
         conf->isEnabled = 1;
+    if (!ngx_strcasecmp(value[1].data, (u_char *) "off"))
+        conf->isEnabled = 0;
     return NGX_CONF_OK;
 }
 static char *setSSORestTrace(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
@@ -212,6 +214,8 @@ static char *setSSORestTrace(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
     ngx_str_t *value = cf->args->elts;
     if (!ngx_strcasecmp(value[1].data, (u_char *) "on"))
         conf->isTraceEnabled = 1;
+    if (!ngx_strcasecmp(value[1].data, (u_char *) "off"))
+        conf->isTraceEnabled = 0;
     return NGX_CONF_OK;
 }
 static char *setSSORestUseServerNameAsDefault(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
@@ -220,6 +224,8 @@ static char *setSSORestUseServerNameAsDefault(ngx_conf_t *cf, ngx_command_t *cmd
     ngx_str_t *value = cf->args->elts;
     if (!ngx_strcasecmp(value[1].data, (u_char *) "on"))
         conf->useServerNameAsDefault = 1;
+    if (!ngx_strcasecmp(value[1].data, (u_char *) "off"))
+        conf->useServerNameAsDefault = 0;
     return NGX_CONF_OK;
 }
 static char *setSSORestSendFormParameters(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
@@ -228,6 +234,8 @@ static char *setSSORestSendFormParameters(ngx_conf_t *cf, ngx_command_t *cmd, vo
     ngx_str_t *value = cf->args->elts;
     if (!ngx_strcasecmp(value[1].data, (u_char *) "on"))
         conf->sendFormParameters = 1;
+    if (!ngx_strcasecmp(value[1].data, (u_char *) "off"))
+        conf->sendFormParameters = 0;
     return NGX_CONF_OK;
 }
 static char *setSSORestDebugEnabled(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)
@@ -236,6 +244,8 @@ static char *setSSORestDebugEnabled(ngx_conf_t *cf, ngx_command_t *cmd, void *cf
     ngx_str_t *value = cf->args->elts;
     if (!ngx_strcasecmp(value[1].data, (u_char *) "on"))
         conf->isDebugEnabled = 1;
+    if (!ngx_strcasecmp(value[1].data, (u_char *) "off"))
+        conf->isDebugEnabled = 0;
     return NGX_CONF_OK;
 }
 static char *setSSORestACOName(ngx_conf_t *cf, ngx_command_t *cmd, void *cfg)

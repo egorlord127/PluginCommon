@@ -73,6 +73,8 @@ static const char *setSSORestEnable(cmd_parms *parms, void *cfg, const char *arg
     SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
     if (!strcasecmp(arg, "on"))
         conf->isEnabled = 1;
+    if (!strcasecmp(arg, "off"))
+        conf->isEnabled = 0;
     return NULL;
 }
 static const char *setSSORestTrace(cmd_parms *parms, void *cfg, const char *arg)
@@ -80,6 +82,8 @@ static const char *setSSORestTrace(cmd_parms *parms, void *cfg, const char *arg)
     SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
     if (!strcasecmp(arg, "on"))
         conf->isTraceEnabled = 1;
+    if (!strcasecmp(arg, "off"))
+        conf->isTraceEnabled = 0;
     return NULL;
 }
 static const char *setSSORestUseServerNameAsDefault(cmd_parms *parms, void *cfg, const char *arg)
@@ -87,6 +91,8 @@ static const char *setSSORestUseServerNameAsDefault(cmd_parms *parms, void *cfg,
     SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
     if (!strcasecmp(arg, "on"))
         conf->useServerNameAsDefault = 1;
+    if (!strcasecmp(arg, "off"))
+        conf->useServerNameAsDefault = 0;
     return NULL;
 }
 static const char *setSSORestSendFormParameters(cmd_parms *parms, void *cfg, const char *arg)
@@ -94,6 +100,8 @@ static const char *setSSORestSendFormParameters(cmd_parms *parms, void *cfg, con
     SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
     if (!strcasecmp(arg, "on"))
         conf->sendFormParameters = 1;
+    if (!strcasecmp(arg, "off"))
+        conf->sendFormParameters = 0;
     return NULL;
 }
 static const char *setSSORestDebugEnabled(cmd_parms *parms, void *cfg, const char *arg)
@@ -101,6 +109,8 @@ static const char *setSSORestDebugEnabled(cmd_parms *parms, void *cfg, const cha
     SSORestPluginConfigration *conf = ap_get_module_config(parms->server->module_config, &ssorest_module);
     if (!strcasecmp(arg, "on"))
         conf->isDebugEnabled = 1;
+    if (!strcasecmp(arg, "off"))
+        conf->isDebugEnabled = 0;
     return NULL;
 }
 static const char *setSSORestACOName(cmd_parms *parms, void *cfg, const char *arg)
