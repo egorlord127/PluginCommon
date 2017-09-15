@@ -239,7 +239,7 @@ int processJsonPayload(SSORestRequestObject* r, SSORestPluginConfigration* conf,
         }
         else 
         {
-            // TODO: handleSendLocalFile
+            return handleSendLocalFile(r, conf, jsonGatewayRequest, jsonGatewayResponse);
         }
     }
 
@@ -355,6 +355,15 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
         setJsonGatewayRequestAttributes(jsonGatewayRequest, RANDOMTEXT_SIGNED_ATTR, escape_str(r->pool, digest));
     }
     return processJsonPayload(r, conf, jsonGatewayRequest);
+}
+
+int handleSendLocalFile(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *jsonGatewayRequest,JSonGatewayResponse *jsonGatewayResponse)
+{
+    char *filename = ssorest_pstrcat(r->pool, conf->localrootpath, getFileContextPath(r), NULL);
+    if (conf->isDebugEnabled && filename != NULL)
+        logDebug(r, "File is located in %s", filename);
+    return 0;
+    // return processJsonPayload(r, conf, jsonGatewayRequest);
 }
 
 /**

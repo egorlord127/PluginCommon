@@ -501,3 +501,15 @@ const char* getUri(SSORestRequestObject* r)
     #endif
     return rv;
 }
+
+const char* getFileContextPath(SSORestRequestObject *r)
+{
+    const char *rv = "";
+    #ifdef APACHE
+        rv = r->uri ? r->uri : "";
+    #elif NGINX
+        ngx_str_t *s = (ngx_str_t *) ((char *) r + offsetof(ngx_http_request_t, uri));
+        rv = s->data? toStringSafety(r->pool, s->data, s->len) : "";
+    #endif
+    return rv;
+}
