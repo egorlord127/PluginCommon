@@ -359,9 +359,63 @@ int handleSignatureRequired(SSORestRequestObject* r, SSORestPluginConfigration* 
 
 int handleSendLocalFile(SSORestRequestObject* r, SSORestPluginConfigration* conf, JSonGatewayRequest *jsonGatewayRequest,JSonGatewayResponse *jsonGatewayResponse)
 {
-    char *filename = ssorest_pstrcat(r->pool, conf->localrootpath, getFileContextPath(r), NULL);
-    if (conf->isDebugEnabled && filename != NULL)
-        logDebug(r, "File is located in %s", filename);
+    char *value = ssorest_pstrcat(r->pool, conf->localrootpath, getFileContextPath(r), NULL);
+    if (conf->isDebugEnabled && value != NULL)
+        logDebug(r, "File is located in %s", value);
+    #ifdef APACHE
+
+    #elif NGINX
+        size_t size;
+        ssize_t n;
+        ngx_file_t file;
+        ngx_str_t  filename;
+        ngx_file_info_t fi;
+        fcc_fileinfo fcc_file;
+        filename.data = (u_char *) value;
+        filename.len = strlen(value);
+        ngx_memzero(&file, sizeof(ngx_file_t));
+        file.name = filename;
+        file.log = r->connection->log;
+
+        file.fd = ngx_open_file(filename.data, NGX_FILE_RDONLY, 0, 0);
+        if (file.fd == NGX_INVALID_FILE) {
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, ngx_open_file_n " \"%s\" failed", filename.data);
+            return SSOREST_INTERNAL_ERROR;
+        }
+
+        if (ngx_fd_info(file.fd, &fi) == NGX_FILE_ERROR) {
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, ngx_fd_info_n " \"%s\" failed", filename.data);
+            return SSOREST_INTERNAL_ERROR;
+        }
+
+        size = (size_t) ngx_file_size(&fi);
+        fcc_file.mtime = ngx_file_mtime(&fi);
+        
+        fcc_file.content = (char*) ngx_palloc(r->pool, size + 1);
+        if (fcc_file.content == NULL) {
+            return SSOREST_INTERNAL_ERROR;
+        }
+    
+        n = ngx_read_file(&file, (u_char *) fcc_file.content, size, 0);
+    
+        if (n == NGX_ERROR) {
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, ngx_read_file_n " \"%s\" failed", filename.data);
+            return SSOREST_INTERNAL_ERROR;
+        }
+    
+        // Add null terminate.
+        fcc_file.content[size] = '\0';
+    
+        if ((size_t) n != size) {
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, ngx_read_file_n " \"%s\" returned only %z bytes instead of %z", filename.data, n, size);
+            return SSOREST_INTERNAL_ERROR;
+        }
+
+        if (ngx_close_file(file.fd) == NGX_FILE_ERROR) {
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, ngx_errno, ngx_close_file_n " \"%s\" failed", filename.data);
+            return SSOREST_INTERNAL_ERROR;
+        }
+    #endif
     return 0;
     // return processJsonPayload(r, conf, jsonGatewayRequest);
 }

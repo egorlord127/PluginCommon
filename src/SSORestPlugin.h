@@ -53,6 +53,12 @@ typedef struct JSonGatewayResponse{
     int status;
 } JSonGatewayResponse;
 
+typedef struct
+{
+	char *content;
+	time_t mtime;
+} fcc_fileinfo;
+
 typedef json_object JSonGatewayRequest;
 
 #define SSOREST_CONF_UNSET      -1
