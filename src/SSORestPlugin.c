@@ -904,6 +904,7 @@ void ssorest_table_set(ngx_list_t *header, const char *key, const char *value)
             // logError(r, "Failed to add new element into list");
         }
     }   
+    ho->hash = 1;
     ho->key.len = strlen(key);
     ho->key.data = (u_char *) key;
     ho->value.len = strlen(value);
