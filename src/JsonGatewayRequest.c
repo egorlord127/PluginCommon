@@ -142,20 +142,23 @@ JSonGatewayRequest* buildJsonGatewayRequest(SSORestRequestObject *r , SSORestPlu
     // locales
     json_object* jsonarray_locale = json_object_new_array();
     ssorest_array_t* locales = getLocales(r);
-    UINT i;
-    for (i = 0; i < locales->nelts; i++)
+    if (locales != NULL)
     {
-        #ifdef APACHE
-            const char *s = ((const char**)locales->elts)[i];
-            json_object_array_add(jsonarray_locale, json_object_new_string((char*) s));
-        #elif NGINX
-            u_char *s = ((ngx_str_t *)locales->elts)[i].data;
-            json_object_array_add(jsonarray_locale, json_object_new_string((char*) s));
-        #endif
-        
+        UINT i;
+        for (i = 0; i < locales->nelts; i++)
+        {
+            #ifdef APACHE
+                const char *s = ((const char**)locales->elts)[i];
+                json_object_array_add(jsonarray_locale, json_object_new_string((char*) s));
+            #elif NGINX
+                u_char *s = ((ngx_str_t *)locales->elts)[i].data;
+                json_object_array_add(jsonarray_locale, json_object_new_string((char*) s));
+            #endif
+            
+        }
     }
     json_object_object_add(jsonGatewayRequest, "locales", jsonarray_locale);
-
+    
     // headers
     json_object* jsonGatewayRequestHeaders = json_object_new_object();
     

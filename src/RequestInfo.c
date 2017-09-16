@@ -268,13 +268,15 @@ ssorest_array_t* getLocales(SSORestRequestObject* r)
     const char *pos;
     ssorest_array_t *langs_array = NULL;
     #ifdef APACHE
-        start = apr_table_get(r->headers_in, "Accept-Language");
-        end = start + strlen(start);
-        langs_array = apr_array_make(r->pool, 1, sizeof(const char*));
+        start = apr_table_get(r->headers_in, "Accept-Language") ? apr_table_get(r->headers_in, "Accept-Language") : NULL;
+        end = start ? start + strlen(start) : NULL;
+        if (start != NULL && end != NULL)
+            langs_array = apr_array_make(r->pool, 1, sizeof(const char*));
     #elif NGINX
         start = r->headers_in.accept_language? (char *) r->headers_in.accept_language->value.data : NULL;
         end = start? (start + r->headers_in.accept_language->value.len) : (NULL);
-        langs_array = ngx_array_create(r->pool, 1, sizeof(ngx_str_t));
+        if (start != NULL && end != NULL)
+            langs_array = ngx_array_create(r->pool, 1, sizeof(ngx_str_t));
     #endif
     
     while (start < end) {
